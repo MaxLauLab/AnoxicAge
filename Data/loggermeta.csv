@@ -1,0 +1,11 @@
+﻿lake;lake_short;Lake_name;Lat;Lon;Elevation;max_depth;Instr_since;DWD_station_id;area_m2;bathy_file_avail;av_depth;profiles;loggers;ref
+Grossglie;gg;Lake Groß Glienicke;52,465959;13,110836;31;11;;430;667072;a.d;6;no;yes;
+Arend;ar;Lake Arendsee;52,8767;11,4867;25;49;;4642;5140000;av.d;29;no;yes;
+Stechlin;st;Lake Stechlin;53,151553;13,026172;59,6;70;;7351;4120000;av.d;24;yes;yes;
+Haussee;hs;Lake Haussee;53,345927;13,442056;84;12,5;;7351;1310000;av.d;4,9;yes;yes;
+Scharmuetzel;sc;Lake Scharmuetzelsee;52,25311;14,056933;38;30;;;8573559;av.d;8,8;yes;yes;
+FukuNO;fukuNO;Fuchskuhle (Northeast basin);53,106016;12,984412;75;5,25;;7351;3900;av.d;2,75;yes;no;koschel 1995
+FukuSW;fukuSW;Fuchskuhle (Southwest basin);53,105459;12,984538;75;5,25;;7351;3900;av.d;2,75;yes;no;
+Peetzsee;PS;Lake Peetzsee;52,423384;13,832994;40;24;;430;623000;av.d;5;yes;yes;Ostendorp 2015
+Werlsee;WS;Lake Werlsee;52,421328;13,813275;40;17;;430;594000;av.d;5;yes;yes;Ostendorp 2015
+;gg_test;testgg;52,465959;13,110836;31;11;;430;667072;av.d;6;no;yes;
