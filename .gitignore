@@ -36,4 +36,4 @@ vignettes/*.pdf
 .Renviron
 
 #Specific files
-/*.Data/Raw/full_database.csv
+/full_database.csv
