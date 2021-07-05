@@ -2,6 +2,7 @@ library(RColorBrewer)
 library(plot.matrix)
 library(dplyr)
 library(segmented)
+library(minpack.lm)
 Interpolation <- function(V1, V2, n){
   output = matrix(nrow = length(V1), ncol=n)
   for(i in 1:n){
@@ -178,17 +179,33 @@ Chemistry <- read.csv("./Data/Raw/chemie_base.csv")
 Bats <- read.csv("./Data/Raw/bats.csv")
 
 
+#Livingstone model based on 2 Rinko profils
+ar.alpha <- filter(Bats, lake =="ar") %>% slice(c(30:38)) %>% select(alpha) #30 to 38 meters because the rate goes down after
+Ar.Jz.rinko =filter(Output.Jz, lake == "ar") %>%
+  filter(depth_1m>=30) %>%
+  filter(depth_1m<=38) %>%
+  select(Jz)
+Ar.Jz.alpha.rinko = lm(Ar.Jz.rinko[,1] ~ ar.alpha[,1])
+
+par(mfrow=c(1,1))
+plot(Ar.Jz.rinko[,1] ~ ar.alpha[,1],
+     las = 1,
+     xlab = expression(alpha(z)),
+     ylab = "Jz")
+abline(Ar.Jz.alpha.rinko)
+summary(Ar.Jz.alpha.rinko)
+
 #Calculate Jz for ar, hs and sc using the loggers
 #####
 #
 Full_data <- read.csv("../full_database.csv")
 logger.meta <- read.csv("./Data/loggermeta.csv")
 ar.depths = c(30,35,40,45,47)
-ar.year = c(2017,2018,2019)
+ar.year = c(2016,2017,2018,2019)
 Ar.full <- filter(.data = Full_data, lake == "ar")
 
-pdf("./Ar.loggers.Temp.pdf", width=8, height=5)
-par(mfrow=c(1,3))
+pdf("./Ar.loggers.Temp.pdf", width=12, height=5)
+par(mfrow=c(1,4))
 for(i in 1:length(ar.depths)){
   Ar.Temp <- filter(Ar.full, depth == ar.depths[i]) %>% 
     filter(parameter == "T_C") %>% 
@@ -197,6 +214,11 @@ for(i in 1:length(ar.depths)){
     mutate(mm = substring(mm_dd,1,2))
   
   for(j in 1:length(ar.year)){
+    if(i==5 & j==1) {
+      plot(1~1, col = "white")
+      legend("center", legend="NA", bty = "n")
+      next
+    }
     Ar.Temp.yr <- filter(Ar.Temp, year == ar.year[j])
     Ar.Temp.yr <- Ar.Temp.yr %>% mutate(Dec.Day = seq(1,length(year), 1)/24)
     Ar.Temp.yr$Season <- ifelse(as.numeric(Ar.Temp.yr$mm) <= 5, "Spring", ifelse(as.numeric(Ar.Temp.yr$mm) >= 9, "Autumn", "Summer"))
@@ -216,8 +238,8 @@ for(i in 1:length(ar.depths)){
 dev.off()
 
 
-pdf("./Ar.loggers.DO.pdf", width=8, height=5)
-par(mfrow=c(1,3))
+pdf("./Ar.loggers.DO.pdf", width=12, height=5)
+par(mfrow=c(1,4))
 for(i in 1:length(ar.depths)){
   Ar.DO <- filter(Ar.full, depth == ar.depths[i]) %>% 
     filter(parameter == "DO_mgL") %>% 
@@ -226,6 +248,11 @@ for(i in 1:length(ar.depths)){
     mutate(mm = substring(mm_dd,1,2))
   
   for(j in 1:length(ar.year)){
+    if(i==5 & j==1) {
+      plot(1~1, col = "white")
+      legend("center", legend="NA", bty = "n")
+      next
+      }
     Ar.DO.yr <- filter(Ar.DO, year == ar.year[j]) %>% mutate(Dec.Day = seq(1,length(year), 1)/24)
     Ar.DO.yr$Season <- ifelse(as.numeric(Ar.DO.yr$mm) <= 5, "Spring", ifelse(as.numeric(Ar.DO.yr$mm) >= 9, "Autumn", "Summer"))
     
@@ -248,26 +275,30 @@ colnames(Jz.mat) = ar.year
 rownames(Jz.mat) = ar.depths
 
 Ar.full <- filter(.data = Full_data, lake == "ar")
-ar.from <- matrix(c(2000,1919,2000,
-                    2000,707,2000,
-                    2000,2000,2000,
-                    2000,1000,2000,
-                    2000,2000,2000), nrow=5, ncol=3, byrow = T)
-ar.to <- matrix(c(7500,7500,7844,
-                  7200,6000,7000,
-                  6000,6000,5800,
-                  5000,3500,5200,
-                  4500,4500,5000), nrow=5, ncol=3, byrow = T)
-Ar.seg.dates = matrix(nrow=15,ncol=4)
+ar.from <- matrix(c(1500,2000,1919,2000,
+                    1500,2000,707,2000,
+                    1500,2000,2000,2000,
+                    1500,2000,1000,2000,
+                    2000,2000,2000,2000), nrow=5, ncol=4, byrow = T)
+ar.to <- matrix(c(7300,7500,7400,7844,
+                  7300,7200,6000,7000,
+                  5600,6000,6000,5800,
+                  4600,5000,3300,5200,
+                  4200,4500,4200,5000), nrow=5, ncol=4, byrow = T)
+Ar.seg.dates = matrix(nrow=20,ncol=4)
 colnames(Ar.seg.dates) = c("First date", "First DO", "Second date", "Second DO")
 rownames(Ar.seg.dates) = as.vector(outer(ar.year, ar.depths, paste, sep=" "))
 rownames(Ar.seg.dates) = paste0(rownames(Ar.seg.dates), "m")
 
+AIC.table = matrix(nrow=20, ncol=5)
+colnames(AIC.table) = c("AIC.lin", "AIC.2", "AIC.3", "AIC.4", "AIC.exp")
+rownames(AIC.table) = rownames(Ar.seg.dates)
+
 Jz.seg.list = list()
 Jz.seg.coef = list()
 counter=1
-pdf("./Ar.loggers.pdf", width=8, height=5)
-par(mfrow=c(1,3))
+pdf("./Ar.loggers.SegLm.pdf", width=8, height=5)
+par(mfrow=c(1,4))
 for(i in 1:length(ar.depths)){
   Ar.DO <- filter(Ar.full, depth == ar.depths[i]) %>% 
     filter(parameter == "DO_mgL") %>% 
@@ -276,6 +307,11 @@ for(i in 1:length(ar.depths)){
     mutate(mm = substring(mm_dd,1,2))
   
   for(j in 1:length(ar.year)){
+    if(i==5 & j==1) {
+      plot(1~1, col = "white")
+      legend("center", legend="NA", bty = "n")
+      counter = counter+1
+      next    }
     Ar.DO.yr <- filter(Ar.DO, year == ar.year[j])
     Ar.DO.yr <- Ar.DO.yr[c(ar.from[i,j]:ar.to[i,j]),] %>% mutate(Dec.Day = seq(1,length(year), 1)/24)
     Ar.DO.yr$Season <- ifelse(as.numeric(Ar.DO.yr$mm) <= 5, "Spring", ifelse(as.numeric(Ar.DO.yr$mm) >= 9, "Autumn", "Summer"))
@@ -293,15 +329,19 @@ for(i in 1:length(ar.depths)){
     value = Ar.DO.yr$value
     lin.mod = lm(value ~ Dec.Day)
     
-    #Piecewise model
-    if(i <=3) psi = c(30,100) #else psi = c(30)
-    segmented.mod <- segmented(lin.mod, psi=psi)
+    abline(lin.mod, lwd = 2, col = "cyan")
     
-    plot.segmented(segmented.mod, add=T, conf.level=.95, rug=F, col = "blue", lwd=2)
-    #Compare both regressions with AIC
-    Delta.AIC = AIC(lin.mod) - AIC(segmented.mod) #3.1
-    print(rownames(Ar.seg.dates)[counter])
-    print(Delta.AIC)
+    AIC.table[counter,1] = round(AIC(lin.mod))
+    #Piecewise model
+    psi = c(50) #else psi = c(30)
+    segmented.mod <- segmented(lin.mod, psi=psi)
+    plot.segmented(segmented.mod, add=T, conf.level=.95, rug=F, col = "red", lwd=2)
+    AIC.table[counter,2] = round(AIC(segmented.mod))
+    
+    psi = c(30,85) #else psi = c(30)
+    segmented.mod <- segmented(lin.mod, psi=psi)
+    plot.segmented(segmented.mod, add=T, conf.level=.95, rug=F, col = "chartreuse3", lwd=2)
+    AIC.table[counter,3] = round(AIC(segmented.mod))
     
     Jz.mat[i,j] = summary(lin.mod)$coefficients[2,1]*-1 #Multiply by -24 to have a positive consumption rate per day
     Jz.seg.list[[counter]] = segmented.mod
@@ -311,12 +351,131 @@ for(i in 1:length(ar.depths)){
     Ar.seg.dates[counter,4] = Ar.DO.yr[summary(Jz.seg.list[[counter]])$psi[2,2]*24, "value"]
     Jz.seg.coef[[counter]] = segmented.mod$coefficients
     legend("topright", legend = c(Ar.seg.dates[counter,1],Ar.seg.dates[counter,3]))
+    
+    psi = c(30,50,88) #else psi = c(30)
+    segmented.mod <- segmented(lin.mod, psi=psi)
+    plot.segmented(segmented.mod, add=T, conf.level=.95, rug=F, col = "blue", lwd=2)
+    AIC.table[counter,4] = round(AIC(segmented.mod))
+    
+    exp.mod <- nlsLM(value ~ a*exp(-k*Dec.Day) + b,
+                     start = list(a = 0.5, k = 0.5, b = 12))
+    exp.param = summary(exp.mod)$parameters
+    curve(exp.param[1] * exp(-exp.param[2] * x) + exp.param[3], add=T, col = "yellow", lwd=2) 
+    AIC.table[counter,5] = round(AIC(exp.mod))
     counter = counter+1
   }
 }
 dev.off()
 
+AIC.table
 
+#Aggregated to daily values
+
+Jz.mat.day = as.data.frame(matrix(nrow=length(ar.depths), ncol = length(ar.year)))
+colnames(Jz.mat.day) = ar.year
+rownames(Jz.mat.day) = ar.depths
+
+ar.from.day <- round(matrix(c(1500,2000,1919,2000,
+                    1500,2000,707,2000,
+                    1500,2000,2000,2000,
+                    1500,2000,1000,2000,
+                    2000,2000,2000,2000), nrow=5, ncol=4, byrow = T)/24)
+ar.to.day <- round(matrix(c(7300,7500,7400,7844,
+                  7300,7200,6000,7000,
+                  5600,6000,6000,5800,
+                  4600,5000,3300,5200,
+                  4200,4500,4200,5000), nrow=5, ncol=4, byrow = T)/24)
+Ar.seg.dates.day = matrix(nrow=20,ncol=4)
+colnames(Ar.seg.dates.day) = c("First date", "First DO", "Second date", "Second DO")
+rownames(Ar.seg.dates.day) = as.vector(outer(ar.year, ar.depths, paste, sep=" "))
+rownames(Ar.seg.dates.day) = paste0(rownames(Ar.seg.dates.day), "m")
+
+AIC.table.day = matrix(nrow=20, ncol=5)
+colnames(AIC.table.day) = c("AIC.lin", "AIC.2", "AIC.3", "AIC.4", "AIC.exp")
+rownames(AIC.table.day) = rownames(Ar.seg.dates.day)
+
+Jz.seg.list.day = list()
+Jz.seg.coef.day = list()
+counter=1
+pdf("./Ar.loggers.SegLm.day.pdf", width=8, height=5)
+par(mfrow=c(1,4))
+for(i in 1:length(ar.depths)){
+  Ar.DO <- filter(Ar.full, depth == ar.depths[i]) %>% 
+    filter(parameter == "DO_mgL") %>% 
+    mutate(year = substring(CET, 1, 4),
+           mm = substring(CET, 6, 7),
+           dd = substring(CET, 9, 10),
+           mm_dd = substring(CET,6,10))
+  Ar.DO.day = Ar.DO %>% group_by(year, mm, dd) %>% summarize(value = mean(value))
+  
+  for(j in 1:length(ar.year)){
+    if(i==5 & j==1) {
+      plot(1~1, col = "white")
+      legend("center", legend="NA", bty = "n")
+      Jz.seg.coef.day[[counter]] = list(c(0,0,0,0,0,0))
+      counter = counter+1
+      next    }
+    Ar.DO.yr.day <- filter(Ar.DO.day, year == ar.year[j])
+    Ar.DO.yr.day <- Ar.DO.yr.day[c(ar.from.day[i,j]:ar.to.day[i,j]),] 
+    Ar.DO.yr.day$Dec.Day = c(1:length(Ar.DO.yr.day$year))
+    Ar.DO.yr.day$Season <- ifelse(as.numeric(Ar.DO.yr.day$mm) <= 5, "Spring", ifelse(as.numeric(Ar.DO.yr.day$mm) >= 9, "Autumn", "Summer"))
+    Ar.DO.yr.day = as.data.frame(Ar.DO.yr.day)
+    
+    plot(Ar.DO.yr.day[,"value"]~ Ar.DO.yr.day[,"Dec.Day"],
+         xlab = "Time",
+         ylab = "DO (mg/L)",
+         main = paste0(ar.year[j]," ", ar.depths[i], "m"))
+    
+    
+    #Try piecewise regressions
+    #Piecewise regression (find the inflection point)
+    #Linear model
+    Dec.Day = Ar.DO.yr.day$Dec.Day
+    value = Ar.DO.yr.day$value
+    lin.mod = lm(value ~ Dec.Day)
+    
+    abline(lin.mod, lwd = 2, col = "cyan")
+    
+    AIC.table.day[counter,1] = round(AIC(lin.mod))
+    #Piecewise model
+    psi = c(50) #else psi = c(30)
+    segmented.mod <- segmented(lin.mod, psi=psi)
+    #plot.segmented(segmented.mod, add=T, conf.level=.95, rug=F, col = "red", lwd=2)
+    AIC.table.day[counter,2] = round(AIC(segmented.mod))
+    
+    psi = c(30,85) #else psi = c(30)
+    segmented.mod <- segmented(lin.mod, psi=psi)
+    plot.segmented(segmented.mod, add=T, conf.level=.95, rug=F, col = "chartreuse3", lwd=2)
+    AIC.table.day[counter,3] = round(AIC(segmented.mod))
+    
+    Jz.mat.day[i,j] = summary(lin.mod)$coefficients[2,1]*-1 #Multiply by -24 to have a positive consumption rate per day
+    Jz.seg.list.day[[counter]] = segmented.mod
+    Ar.seg.dates.day[counter,1] = paste(Ar.DO.yr.day[round(summary(Jz.seg.list.day[[counter]])$psi[1,2]), "mm"], Ar.DO.yr.day[round(summary(Jz.seg.list.day[[counter]])$psi[1,2]), "dd"], sep="-")
+    Ar.seg.dates.day[counter,2] = Ar.DO.yr.day[round(summary(Jz.seg.list.day[[counter]])$psi[1,2]), "value"]
+    Ar.seg.dates.day[counter,3] = paste(Ar.DO.yr.day[round(summary(Jz.seg.list.day[[counter]])$psi[2,2]), "mm"],Ar.DO.yr.day[round(summary(Jz.seg.list.day[[counter]])$psi[2,2]), "dd"],sep="-")
+    Ar.seg.dates.day[counter,4] = Ar.DO.yr.day[round(summary(Jz.seg.list.day[[counter]])$psi[2,2]), "value"]
+    Jz.seg.coef.day[[counter]] = segmented.mod$coefficients
+    legend("topright", legend = c(Ar.seg.dates[counter,1],Ar.seg.dates[counter,3]))
+    
+    psi = c(30,50,88) #else psi = c(30)
+    segmented.mod <- segmented(lin.mod, psi=psi)
+    #plot.segmented(segmented.mod, add=T, conf.level=.95, rug=F, col = "blue", lwd=2)
+    AIC.table.day[counter,4] = round(AIC(segmented.mod))
+    
+    exp.mod <- nlsLM(value ~ a*exp(-k*Dec.Day) + b,
+                     start = list(a = 0.5, k = 0.5, b = 12))
+    exp.param = summary(exp.mod)$parameters
+    #curve(exp.param[1] * exp(-exp.param[2] * x) + exp.param[3], add=T, col = "yellow", lwd=2) 
+    AIC.table.day[counter,5] = round(AIC(exp.mod))
+    counter = counter+1
+  }
+}
+dev.off()
+
+AIC.table.day
+
+
+#Calcule the Livingstone models with the hourly data
 Ar.Jz.mat = matrix(unlist(Jz.seg.coef),nrow=6)
 rownames(Ar.Jz.mat) = c("Intercept", "First slope", "Second slope", "Third slope", "Useless", "No_Use")
 colnames(Ar.Jz.mat) = rownames(Ar.seg.dates)
@@ -339,6 +498,46 @@ Ar.Living.2018 = summary(lm(Ar.Jz.2018 ~ Jz.mat[,4]))
 Ar.Living.2019 = summary(lm(Ar.Jz.2019 ~ Jz.mat[,4]))
 Ar.Living.global = summary(lm(Ar.Jz.Global ~ Jz.mat[,4]))
 
+
+#Calculate the Livingston model with daily data
+
+Ar.Jz.mat.day = matrix(unlist(Jz.seg.coef.day),nrow=6)
+rownames(Ar.Jz.mat.day) = c("Intercept", "First slope", "Second slope", "Third slope", "Useless", "No_Use")
+colnames(Ar.Jz.mat.day) = rownames(Ar.seg.dates.day)
+
+Ar.Jz.day = vector(length=15)
+Jz.index.day = c(0,0,1,0,
+                 0,0,1,0,
+                 0,0,0,0,
+                 0,0,1,0,
+                 0,1,0,0)
+for(i in 1:length(Jz.index.day))
+{
+  if(Jz.index.day[i]) Ar.Jz.day[i] = Ar.Jz.mat.day[2,i] else Ar.Jz.day[i] = Ar.Jz.mat.day[2,i] + Ar.Jz.mat.day[3,i]
+}
+
+Ar.Jz.day[Ar.Jz.day==0] = NA
+Ar.Jz.day[8] = Ar.Jz.day[8]+Ar.Jz.mat.day[4,8]
+
+Ar.Jz.day.2016 = Ar.Jz.day[c(1,5,9,13,17)]*-1
+Ar.Jz.day.2017 = Ar.Jz.day[c(1,5,9,13,17)+1]*-1
+Ar.Jz.day.2018 = Ar.Jz.day[c(1,5,9,13,17)+2]*-1
+Ar.Jz.day.2019 = Ar.Jz.day[c(1,5,9,13,17)+3]*-1
+Ar.Jz.day.Global = (Ar.Jz.day.2016+Ar.Jz.day.2017+Ar.Jz.day.2018+Ar.Jz.day.2019)/4
+Ar.Jz.day.Global[5] = (Ar.Jz.day.2017[5]+Ar.Jz.day.2018[5]+Ar.Jz.day.2019[5])/3
+Jz.mat[,4] = filter(Bats, lake =="ar") %>% slice(c(30,35,40,45,47)) %>% select(alpha)
+
+Ar.Living.2016.day = summary(lm(Ar.Jz.day.2016 ~ Jz.mat[,4]))
+Ar.Living.2017.day = summary(lm(Ar.Jz.day.2017 ~ Jz.mat[,4]))
+Ar.Living.2018.day = summary(lm(Ar.Jz.day.2018 ~ Jz.mat[,4]))
+Ar.Living.2019.day = summary(lm(Ar.Jz.day.2019 ~ Jz.mat[,4]))
+Ar.Living.global.day = summary(lm(Ar.Jz.day.Global ~ Jz.mat[,4]))
+
+
+
+
+
+#Plot for hourly resolution
 pdf("./Arendsee.Jz-Alpha.pdf")
 par(mfrow=c(1,1))
 plot(Jz.mat[,1] ~ Jz.mat[, 4], las =1,
@@ -372,9 +571,32 @@ legend("topleft", legend = c("2017","2018","2019", "global"),
        text.col = c("blue", "chartreuse3","red", "black"))
 dev.off()
 
-#2017 Jv = 0.024135 Ja = 1.170962
-#2018 Jv = 0.02572 Ja = 1.60033
-#2019 Jv = 0.046920 Ja = 0.542862
+
+#Plot for daily resolution
+pdf("./Arendsee.Jz-Alpha.SegLm.day.pdf")
+par(mfrow=c(1,1))
+plot(Ar.Jz.day.2017 ~ Jz.mat[, 4], las =1,
+     xlab = "alpha",
+     ylab = "Jz",
+     ylim = c(0.04, 0.3),
+     main = "Arendsee", col ="blue",pch=16)
+abline(lm(Ar.Jz.day.2017 ~ Jz.mat[, 4]), col ="blue")
+points(Ar.Jz.day.2016 ~ Jz.mat[,4], col="yellow", pch = 16)
+abline(lm(Ar.Jz.day.2016 ~ Jz.mat[, 4]), col ="yellow")
+points(Ar.Jz.day.2018 ~ Jz.mat[, 4], col ="chartreuse3",pch=16)
+abline(lm(Ar.Jz.day.2018 ~ Jz.mat[, 4]), col ="chartreuse3")
+points(Ar.Jz.day.2019 ~ Jz.mat[, 4], col = "red",pch=16)
+abline(lm(Ar.Jz.day.2019 ~ Jz.mat[, 4]), col ="red")
+points(Ar.Jz.day.Global ~ Jz.mat[,4], col="black", pch = 16)
+abline(lm(Ar.Jz.day.Global ~ Jz.mat[, 4]), col ="black")
+legend("topleft", legend = c("2016","2017","2018","2019", "global"),
+       text.col = c("yellow","blue", "chartreuse3","red", "black"))
+dev.off()
+
+#2016 Jv = 0.0104093 Ja = 2.0076516 #Missing last depth, Ja is overestimated
+#2017 Jv = 0.0489350 Ja = 0.9478439
+#2018 Jv = 0.0298262 Ja = 2.2274864
+#2019 Jv = 0.0204593 Ja = 1.7858528
 
 #Get the coefficients for Jv and Ja for each years
 Ar.Jv.2017 = Ar.Living.2017$coefficients[1,1]
@@ -428,6 +650,37 @@ Ar.mod.2019.120d[Ar.mod.2019.120d<0] = 0
 plot(seq(1,47,1)~ Ar.mod.2017.80d, ylim=c(47,1), xlim = c(0,14), pch = 16, col = "blue")
 points(seq(1,47,1)~ Ar.mod.2017.120d, pch = 16, col = "red")
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#################################################################################
+###################### For other lakes, probably delete##########################
+#################################################################################
 gg.full <- filter(.data = Full_data, lake == "gg")
 gg.DO.full <- filter(.data = gg.full, depth == 8) %>% filter(parameter == "DO_mgL")
 gg.Temp.full <- filter(.data = gg.full, depth == 8) %>% filter(parameter == "T_C")
