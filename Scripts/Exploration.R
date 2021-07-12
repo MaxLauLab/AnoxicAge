@@ -3,6 +3,7 @@ library(plot.matrix)
 library(dplyr)
 library(segmented)
 library(minpack.lm)
+library(tidyr)
 Interpolation <- function(V1, V2, n){
   output = matrix(nrow = length(V1), ncol=n)
   for(i in 1:n){
@@ -10,6 +11,43 @@ Interpolation <- function(V1, V2, n){
   }
   return(output)
 }
+
+theme_klima<- function(base_size = 14, base_family = "") {
+  # Starts with theme_grey and then modify some parts
+  theme_bw(base_size = base_size, base_family = base_family) %+replace%
+    theme(
+      axis.text.x = element_text(size=14,colour="black"),
+      axis.text.y = element_text(size=14,colour="black", margin=margin(0,5,0,0), vjust = 0.5),
+      axis.ticks =  element_line(colour = "black"), 
+      axis.title.x= element_text(size=21,colour="black",vjust=-2),
+      axis.title.y= element_text(size=21,angle=90,colour="black",vjust = 6),
+      panel.background = element_rect(fill="white",size = 1, colour = "black"), 
+      panel.border =element_blank(),  
+      panel.grid.major = element_line(colour = "lightgrey"), 
+      #panel.grid.minor = element_line(colour = "lightgrey"),
+      panel.grid.minor = element_blank(), 
+      plot.background = element_rect(fill="white",color=NA), 
+      plot.title =element_text(size=14,colour="black"), 
+      plot.margin = unit(c(1,  1, 1, 2), "lines"),
+      legend.background=element_rect(fill='white',color=NA),
+      legend.title=element_text(size=14,colour="black"),
+      legend.text=element_text(size=14,colour="black"),
+      legend.key = element_rect( fill = 'lightgrey',color='white'),
+      legend.key.size = unit(c(1.2, 1.2), "lines"),
+      axis.line.x = element_line(color="black", size = 1.5),
+      axis.line.y = element_line(color="black", size = 1.5),
+      #factettes
+      strip.background = element_rect(colour = 'lightgrey',size = 1,fill = 'lightgrey'), #for boxes of facettes
+      panel.spacing = unit(0.6 , "lines"),   #panel margins
+      strip.text.x = element_text(size = 12,colour = 'black'),
+      strip.text.y = element_text(size = 12,colour = 'black',angle = 90)
+    )
+}
+
+
+
+
+
 setwd("D:/Postdoc/Allemagne/Github/AnoxicAge")
 Rinko <- read.csv("./Data/Raw/rinkos.csv", row.names=1)
 
@@ -178,25 +216,9 @@ Output.Jz$ID = paste(Output.Jz$lake, Output.Jz$depth_1m, sep = "-")
 Chemistry <- read.csv("./Data/Raw/chemie_base.csv")
 Bats <- read.csv("./Data/Raw/bats.csv")
 
-
-#Livingstone model based on 2 Rinko profils
-ar.alpha <- filter(Bats, lake =="ar") %>% slice(c(30:38)) %>% select(alpha) #30 to 38 meters because the rate goes down after
-Ar.Jz.rinko =filter(Output.Jz, lake == "ar") %>%
-  filter(depth_1m>=30) %>%
-  filter(depth_1m<=38) %>%
-  select(Jz)
-Ar.Jz.alpha.rinko = lm(Ar.Jz.rinko[,1] ~ ar.alpha[,1])
-
-par(mfrow=c(1,1))
-plot(Ar.Jz.rinko[,1] ~ ar.alpha[,1],
-     las = 1,
-     xlab = expression(alpha(z)),
-     ylab = "Jz")
-abline(Ar.Jz.alpha.rinko)
-summary(Ar.Jz.alpha.rinko)
-
-#Calculate Jz for ar, hs and sc using the loggers
-#####
+#########################################################################################
+###########################Calculate Jz Arendsee using loggers###########################
+#########################################################################################
 #
 Full_data <- read.csv("../full_database.csv")
 logger.meta <- read.csv("./Data/loggermeta.csv")
@@ -397,7 +419,7 @@ rownames(AIC.table.day) = rownames(Ar.seg.dates.day)
 Jz.seg.list.day = list()
 Jz.seg.coef.day = list()
 counter=1
-pdf("./Ar.loggers.SegLm.day.pdf", width=8, height=5)
+pdf("./Ar.loggers.SegLm.day.100-200.pdf", width=8, height=5)
 par(mfrow=c(1,4))
 for(i in 1:length(ar.depths)){
   Ar.DO <- filter(Ar.full, depth == ar.depths[i]) %>% 
@@ -406,7 +428,8 @@ for(i in 1:length(ar.depths)){
            mm = substring(CET, 6, 7),
            dd = substring(CET, 9, 10),
            mm_dd = substring(CET,6,10))
-  Ar.DO.day = Ar.DO %>% group_by(year, mm, dd) %>% summarize(value = mean(value))
+  Ar.DO$DOY = as.numeric(strftime(Ar.DO$CET, format = "%j"))
+  Ar.DO.day = Ar.DO %>% group_by(year, DOY) %>% summarize(value = mean(value))
   
   for(j in 1:length(ar.year)){
     if(i==5 & j==1) {
@@ -416,12 +439,13 @@ for(i in 1:length(ar.depths)){
       counter = counter+1
       next    }
     Ar.DO.yr.day <- filter(Ar.DO.day, year == ar.year[j])
-    Ar.DO.yr.day <- Ar.DO.yr.day[c(ar.from.day[i,j]:ar.to.day[i,j]),] 
-    Ar.DO.yr.day$Dec.Day = c(1:length(Ar.DO.yr.day$year))
-    Ar.DO.yr.day$Season <- ifelse(as.numeric(Ar.DO.yr.day$mm) <= 5, "Spring", ifelse(as.numeric(Ar.DO.yr.day$mm) >= 9, "Autumn", "Summer"))
+#    Ar.DO.yr.day <- Ar.DO.yr.day[which(Ar.DO.yr.day$DOY==DOY.ini | Ar.DO.yr.day$DOY==DOY.end),]
+    Ar.DO.yr.day <- Ar.DO.yr.day[which(Ar.DO.yr.day$DOY>=100 & Ar.DO.yr.day$DOY<=200),]
+    # Ar.DO.yr.day$Dec.Day = c(1:length(Ar.DO.yr.day$year))
+    # Ar.DO.yr.day$Season <- ifelse(as.numeric(Ar.DO.yr.day$mm) <= 5, "Spring", ifelse(as.numeric(Ar.DO.yr.day$mm) >= 9, "Autumn", "Summer"))
     Ar.DO.yr.day = as.data.frame(Ar.DO.yr.day)
     
-    plot(Ar.DO.yr.day[,"value"]~ Ar.DO.yr.day[,"Dec.Day"],
+    plot(Ar.DO.yr.day[,"value"]~ Ar.DO.yr.day[,"DOY"],
          xlab = "Time",
          ylab = "DO (mg/L)",
          main = paste0(ar.year[j]," ", ar.depths[i], "m"))
@@ -430,7 +454,7 @@ for(i in 1:length(ar.depths)){
     #Try piecewise regressions
     #Piecewise regression (find the inflection point)
     #Linear model
-    Dec.Day = Ar.DO.yr.day$Dec.Day
+    Dec.Day = Ar.DO.yr.day$DOY
     value = Ar.DO.yr.day$value
     lin.mod = lm(value ~ Dec.Day)
     
@@ -438,35 +462,35 @@ for(i in 1:length(ar.depths)){
     
     AIC.table.day[counter,1] = round(AIC(lin.mod))
     #Piecewise model
-    psi = c(50) #else psi = c(30)
+    psi = c(150) #else psi = c(30)
     segmented.mod <- segmented(lin.mod, psi=psi)
     #plot.segmented(segmented.mod, add=T, conf.level=.95, rug=F, col = "red", lwd=2)
     AIC.table.day[counter,2] = round(AIC(segmented.mod))
     
-    psi = c(30,85) #else psi = c(30)
+    psi = c(150,180) #else psi = c(30)
     segmented.mod <- segmented(lin.mod, psi=psi)
     plot.segmented(segmented.mod, add=T, conf.level=.95, rug=F, col = "chartreuse3", lwd=2)
     AIC.table.day[counter,3] = round(AIC(segmented.mod))
     
     Jz.mat.day[i,j] = summary(lin.mod)$coefficients[2,1]*-1 #Multiply by -24 to have a positive consumption rate per day
     Jz.seg.list.day[[counter]] = segmented.mod
-    Ar.seg.dates.day[counter,1] = paste(Ar.DO.yr.day[round(summary(Jz.seg.list.day[[counter]])$psi[1,2]), "mm"], Ar.DO.yr.day[round(summary(Jz.seg.list.day[[counter]])$psi[1,2]), "dd"], sep="-")
+    # Ar.seg.dates.day[counter,1] = paste(Ar.DO.yr.day[round(summary(Jz.seg.list.day[[counter]])$psi[1,2]), "mm"], Ar.DO.yr.day[round(summary(Jz.seg.list.day[[counter]])$psi[1,2]), "dd"], sep="-")
     Ar.seg.dates.day[counter,2] = Ar.DO.yr.day[round(summary(Jz.seg.list.day[[counter]])$psi[1,2]), "value"]
-    Ar.seg.dates.day[counter,3] = paste(Ar.DO.yr.day[round(summary(Jz.seg.list.day[[counter]])$psi[2,2]), "mm"],Ar.DO.yr.day[round(summary(Jz.seg.list.day[[counter]])$psi[2,2]), "dd"],sep="-")
+    # Ar.seg.dates.day[counter,3] = paste(Ar.DO.yr.day[round(summary(Jz.seg.list.day[[counter]])$psi[2,2]), "mm"],Ar.DO.yr.day[round(summary(Jz.seg.list.day[[counter]])$psi[2,2]), "dd"],sep="-")
     Ar.seg.dates.day[counter,4] = Ar.DO.yr.day[round(summary(Jz.seg.list.day[[counter]])$psi[2,2]), "value"]
     Jz.seg.coef.day[[counter]] = segmented.mod$coefficients
     legend("topright", legend = c(Ar.seg.dates[counter,1],Ar.seg.dates[counter,3]))
     
-    psi = c(30,50,88) #else psi = c(30)
+    psi = c(130,150,180) #else psi = c(30)
     segmented.mod <- segmented(lin.mod, psi=psi)
     #plot.segmented(segmented.mod, add=T, conf.level=.95, rug=F, col = "blue", lwd=2)
     AIC.table.day[counter,4] = round(AIC(segmented.mod))
-    
-    exp.mod <- nlsLM(value ~ a*exp(-k*Dec.Day) + b,
-                     start = list(a = 0.5, k = 0.5, b = 12))
-    exp.param = summary(exp.mod)$parameters
+    # 
+    # exp.mod <- nlsLM(value ~ a*exp(-k*Dec.Day) + b,
+    #                  start = list(a = 0.5, k = 0.5, b = 12))
+    # exp.param = summary(exp.mod)$parameters
     #curve(exp.param[1] * exp(-exp.param[2] * x) + exp.param[3], add=T, col = "yellow", lwd=2) 
-    AIC.table.day[counter,5] = round(AIC(exp.mod))
+    # AIC.table.day[counter,5] = round(AIC(exp.mod))
     counter = counter+1
   }
 }
@@ -491,7 +515,7 @@ Ar.Jz.2017 = Ar.Jz[c(1,4,7,10,13)]*-1
 Ar.Jz.2018 = Ar.Jz[c(1,4,7,10,13)+1]*-1
 Ar.Jz.2019 = Ar.Jz[c(1,4,7,10,13)+2]*-1
 Ar.Jz.Global = (Ar.Jz.2017+ Ar.Jz.2018+Ar.Jz.2019)/3
-Jz.mat[,4] = filter(Bats, lake =="ar") %>% slice(c(30,35,40,45,47)) %>% select(alpha)
+Jz.mat[,4] = filter(Bats, lake =="ar") %>% arrange(depth_1m)  %>% slice(c(30,35,40,45,47)) %>% select(alpha)
 
 Ar.Living.2017 = summary(lm(Ar.Jz.2017 ~ Jz.mat[,4]))
 Ar.Living.2018 = summary(lm(Ar.Jz.2018 ~ Jz.mat[,4]))
@@ -533,8 +557,23 @@ Ar.Living.2018.day = summary(lm(Ar.Jz.day.2018 ~ Jz.mat[,4]))
 Ar.Living.2019.day = summary(lm(Ar.Jz.day.2019 ~ Jz.mat[,4]))
 Ar.Living.global.day = summary(lm(Ar.Jz.day.Global ~ Jz.mat[,4]))
 
+#With the linear O2 consumption rates
+Ar.Jz.day.2016.lin = Jz.mat.day[,1]
+Ar.Jz.day.2017.lin = Jz.mat.day[,2]
+Ar.Jz.day.2018.lin = Jz.mat.day[,3]
+Ar.Jz.day.2019.lin = Jz.mat.day[,4]
 
+#Jz ~ Alpha, linear
+Ar.Living.2016.day = summary(lm(Ar.Jz.day.2016.lin ~ Jz.mat[,4]))
+Ar.Living.2017.day = summary(lm(Ar.Jz.day.2017.lin ~ Jz.mat[,4]))
+Ar.Living.2018.day = summary(lm(Ar.Jz.day.2018.lin ~ Jz.mat[,4]))
+Ar.Living.2019.day = summary(lm(Ar.Jz.day.2019.lin ~ Jz.mat[,4]))
 
+#Jz ~ Alpha, log linear
+Ar.Living.2016.day.log = lm(Ar.Jz.day.2016.lin ~ log10(Jz.mat[,4]))
+Ar.Living.2017.day.log = lm(Ar.Jz.day.2017.lin ~ log10(Jz.mat[,4]))
+Ar.Living.2018.day.log = lm(Ar.Jz.day.2018.lin ~ log10(Jz.mat[,4]))
+Ar.Living.2019.day.log = lm(Ar.Jz.day.2019.lin ~ log10(Jz.mat[,4]))
 
 
 #Plot for hourly resolution
@@ -579,24 +618,414 @@ plot(Ar.Jz.day.2017 ~ Jz.mat[, 4], las =1,
      xlab = "alpha",
      ylab = "Jz",
      ylim = c(0.04, 0.3),
-     main = "Arendsee", col ="blue",pch=16)
-abline(lm(Ar.Jz.day.2017 ~ Jz.mat[, 4]), col ="blue")
+     main = "Arendsee", col ="blue",pch=16, log="x")
+abline(lm(Ar.Jz.day.2017 ~ log10(Jz.mat[, 4])), col ="blue")
 points(Ar.Jz.day.2016 ~ Jz.mat[,4], col="yellow", pch = 16)
-abline(lm(Ar.Jz.day.2016 ~ Jz.mat[, 4]), col ="yellow")
+abline(lm(Ar.Jz.day.2016 ~ log10(Jz.mat[, 4])), col ="yellow")
 points(Ar.Jz.day.2018 ~ Jz.mat[, 4], col ="chartreuse3",pch=16)
-abline(lm(Ar.Jz.day.2018 ~ Jz.mat[, 4]), col ="chartreuse3")
+abline(lm(Ar.Jz.day.2018 ~ log10(Jz.mat[, 4])), col ="chartreuse3")
 points(Ar.Jz.day.2019 ~ Jz.mat[, 4], col = "red",pch=16)
-abline(lm(Ar.Jz.day.2019 ~ Jz.mat[, 4]), col ="red")
+abline(lm(Ar.Jz.day.2019 ~ log10(Jz.mat[, 4])), col ="red")
 points(Ar.Jz.day.Global ~ Jz.mat[,4], col="black", pch = 16)
-abline(lm(Ar.Jz.day.Global ~ Jz.mat[, 4]), col ="black")
+abline(lm(Ar.Jz.day.Global ~ log10(Jz.mat[, 4])), col ="black")
 legend("topleft", legend = c("2016","2017","2018","2019", "global"),
        text.col = c("yellow","blue", "chartreuse3","red", "black"))
 dev.off()
 
-#2016 Jv = 0.0104093 Ja = 2.0076516 #Missing last depth, Ja is overestimated
-#2017 Jv = 0.0489350 Ja = 0.9478439
-#2018 Jv = 0.0298262 Ja = 2.2274864
-#2019 Jv = 0.0204593 Ja = 1.7858528
+Ar.log.lm <- nlsLM(Ar.Jz.day.2019 ~ a*log10(k*Jz.mat[, 4]),
+                   start = list(a=0.08, k=200))
+pred <- predict(Ar.log.lm, Jz.mat[, 4])
+rss <- sum((pred - Ar.Jz.day.2019) ^ 2, na.rm=T)
+tss <- sum((Ar.Jz.day.2019 - mean(Ar.Jz.day.2019, na.rm=T)) ^ 2, na.rm=T)
+rsq <- 1 - rss/tss
+
+
+##########################################################################################
+###################Calculate Jz Arendsee using high temporal resolution###################
+##########################################################################################
+#Load all file names
+YSI.list = list.files("./Data/Raw/Arendsee-cleaned")
+#Keep only csv files
+YSI.list = YSI.list[grep(pattern = ".csv",list.files("./Data/Raw/Arendsee-cleaned"))]
+YSI.yrs = c(2017,2018,2019,2020)
+
+for(i in 1:length(YSI.yrs)){
+#Read the file
+Ar.YSI = read.csv(paste0("./Data/Raw/Arendsee-cleaned/",YSI.list[i]))
+
+#Remove NA at bottom of profiles with niminum value of the profile
+for(j in 1:ncol(Ar.YSI))
+{
+  if(is.na(Ar.YSI[,j])) Ar.YSI[is.na(Ar.YSI[,j]),j] = min(Ar.YSI[,j], na.rm=T)
+}
+
+#Transform to long format
+Ar.long = pivot_longer(Ar.YSI, cols = 2:ncol(Ar.YSI), names_to = "Date", values_to = "DO_mgL")
+#Split Date into Year, months and day
+Ar.long$Date = substring(Ar.long$Date, 2,20) %>% strptime("%Y.%m.%d.%H.%M.%S")
+
+Ar.long$DOY = as.numeric(strftime(Ar.long$Date, format = "%j"))
+
+Ar.long = Ar.long %>% mutate(Year = substring(Date, 1, 4),
+                             mm = substring(Date, 6, 7),
+                             dd = substring(Date, 9, 10))
+
+#Keep only values below 30 meters to match other methods
+Ar.long.deep = Ar.long[Ar.long$Depth_m>=30,]
+
+#Order the dataframe
+Ar.long.deep = Ar.long.deep[order(Ar.long.deep$Depth_m ,Ar.long.deep$DOY),]
+
+
+
+#Find Jz for each depth
+Jz.YSI = vector(length = length(unique(Ar.long.deep$Depth_m)))
+#Note. After looking at the pdf once, the second slope in the piecewise regression is always right
+pdf(paste0("./Ar.YSI.",YSI.yrs[i],".pdf"))
+for(k in 1:length(Jz.YSI)){
+  Ar.temp <- Ar.long.deep[Ar.long.deep$Depth_m == unique(Ar.long.deep$Depth_m)[k],]
+  if(YSI.yrs[i] == 2017) {
+    Ar.temp = Ar.temp[Ar.temp$DOY>60 & Ar.temp$DOY < 325,]
+    psi = c(100,200)}
+  if(YSI.yrs[i] == 2018) {
+    Ar.temp = Ar.temp[Ar.temp$DOY>100& Ar.temp$DOY < 330,] 
+    psi = c(110,200)}
+  if(YSI.yrs[i] == 2019) {
+    Ar.temp = Ar.temp[Ar.temp$DOY>75 & Ar.temp$DOY < 337,]
+    psi = c(100,200)}
+  if(YSI.yrs[i] == 2020) {
+    Ar.temp = Ar.temp[Ar.temp$DOY>98,]
+    psi = c(110,200)}
+  
+  Dec.Day = Ar.temp$DOY
+  value = Ar.temp$DO_mgL
+  lin.mod = lm(value ~ Dec.Day)
+  plot(value ~ Dec.Day, las = 1,
+       main = paste(unique(Ar.long.deep$Depth_m)[k], "m", sep=" "),
+       ylab = expression(DO~mg~L^-1),
+       xlab = "Day of year",
+       ylim = c(0,13))
+  abline(lin.mod, lwd = 2, col = "cyan")
+  
+  #Piecewise model
+  segmented.mod <- segmented(lin.mod, psi=psi)
+  plot.segmented(segmented.mod, add=T, conf.level=.95, rug=F, col = "chartreuse3", lwd=2)
+  legend("topright", legend = c(paste("First breakpoint is", round(segmented.mod$psi[1,2]), "day", sep = " "),
+                                paste("Second breakpoint is", round(segmented.mod$psi[2,2]), "day", sep = " ")))
+  
+  Jz.YSI[k] = (segmented.mod$coefficients[2] + segmented.mod$coefficients[3])*-1
+  
+}
+dev.off()
+}
+
+#Select the right alphas
+#2017: 30:48
+#2018-2020: 30:47
+ar.alpha <- filter(Bats, lake =="ar") %>% arrange(depth_1m) %>% slice(c(30:47)) %>% select(alpha) #30 to 48 meters because the rate goes down after
+
+Ar.Jz.alpha.YSI = lm(Jz.YSI ~ ar.alpha[,1])
+Ar.Jz.alpha.YSI.log = lm(Jz.YSI ~ log10(ar.alpha[,1]))
+
+Ar.log.lm <- nlsLM(Jz.YSI ~ a*log10(k*ar.alpha[,1]),
+    start = list(a=0.08, k=200))
+pred <- predict(Ar.log.lm, ar.alpha[,1])
+rss <- sum((pred - Jz.YSI) ^ 2)
+tss <- sum((Jz.YSI - mean(Jz.YSI)) ^ 2)
+rsq <- 1 - rss/tss
+
+par(mfrow=c(1,2))
+plot(Jz.YSI ~ ar.alpha[,1],
+     las = 1,
+     xlab = expression(alpha(z)),
+     ylab = "Jz",
+     main = "With YSI profiles")
+abline(Ar.Jz.alpha.YSI)
+plot(Jz.YSI ~ ar.alpha[,1],
+     las = 1,
+     xlab = expression(alpha(z)),
+     ylab = "Jz",
+     main = "With YSI profiles",
+     log = "x")
+abline(Ar.Jz.alpha.YSI.log)
+summary(Ar.Jz.alpha.YSI)$coefficients
+summary(Ar.Jz.alpha.YSI)$r.squared
+summary(Ar.Jz.alpha.YSI.log)$coefficients
+summary(Ar.Jz.alpha.YSI.log)$r.squared
+
+
+
+##########################################################################################
+###################Calculate Jz Arendsee using low temporal resolution####################
+##########################################################################################
+ar.alpha <- filter(Bats, lake =="ar") %>% arrange(depth_1m) %>% slice(c(30:38)) %>% select(alpha) #30 to 38 meters because the rate goes down after
+#With Rinko profiles calculated at the begining of this script
+Ar.Jz.rinko =filter(Output.Jz, lake == "ar") %>%
+  filter(depth_1m>=30) %>%
+  filter(depth_1m<=38) %>%
+  select(Jz)
+Ar.Jz.alpha.rinko = lm(Ar.Jz.rinko[,1] ~ ar.alpha[,1])
+Ar.Jz.alpha.rinko.log = lm(Ar.Jz.rinko[,1] ~ log10(ar.alpha[,1]))
+
+par(mfrow=c(1,1))
+plot(Ar.Jz.rinko[,1] ~ ar.alpha[,1],
+     las = 1,
+     xlab = expression(alpha(z)),
+     ylab = "Jz")
+abline(Ar.Jz.alpha.rinko)
+summary(Ar.Jz.alpha.rinko)
+
+
+Ar.Jz.rinko = as.vector(Ar.Jz.rinko[,1])
+Ar.log.lm <- nlsLM(Ar.Jz.rinko ~ a*log10(k*ar.alpha[,1]),
+                   start = list(a=0.08, k=200))
+pred <- predict(Ar.log.lm, ar.alpha[,1])
+rss <- sum((pred - Ar.Jz.rinko) ^ 2)
+tss <- sum((Ar.Jz.rinko - mean(Ar.Jz.rinko)) ^ 2)
+rsq <- 1 - rss/tss
+
+#With matching YSI profiles
+Ar.Jz.lm.list = list()
+for(i in 1:4){
+Ar.YSI = read.csv(paste0("./Data/Raw/Arendsee-cleaned/",YSI.list[i]))
+
+#Remove NA at bottom of profiles with niminum value of the profile
+for(j in 1:ncol(Ar.YSI))
+{
+  if(is.na(Ar.YSI[,j])) Ar.YSI[is.na(Ar.YSI[,j]),j] = min(Ar.YSI[,j], na.rm=T)
+}
+
+#Transform to long format
+Ar.long = pivot_longer(Ar.YSI, cols = 2:ncol(Ar.YSI), names_to = "Date", values_to = "DO_mgL")
+#Split Date into Year, months and day
+Ar.long$Date = substring(Ar.long$Date, 2,20) %>% strptime("%Y.%m.%d.%H.%M.%S")
+
+Ar.long$DOY = as.numeric(strftime(Ar.long$Date, format = "%j"))
+
+Ar.long = Ar.long %>% mutate(Year = substring(Date, 1, 4),
+                             mm = substring(Date, 6, 7),
+                             dd = substring(Date, 9, 10))
+
+#Keep only values below 30 meters to match other methods
+Ar.long.deep = Ar.long[Ar.long$Depth_m>=30,]
+
+#Order the dataframe
+Ar.long.deep = Ar.long.deep[order(Ar.long.deep$Depth_m ,Ar.long.deep$DOY),]
+
+#Keep only matching date to Rinko profiles
+if(i==1) {DOY.ini = DoY$ar[[1]][1]-1
+DOY.end = DoY$ar[[1]][2]
+alpha.select = c(30:39)}
+if(i==2){ DOY.ini = DoY$ar[[1]][1]
+DOY.end = DoY$ar[[1]][2]+2
+alpha.select = c(30:47)}
+if(i==3){ DOY.ini = DoY$ar[[1]][1]
+DOY.end = DoY$ar[[1]][2]
+alpha.select = c(30:44)}
+if(i==4){ DOY.ini = DoY$ar[[1]][1]
+DOY.end = DoY$ar[[1]][2]
+alpha.select = c(30:39)}
+
+
+Ar.long.deep.lowres <- Ar.long.deep[which(Ar.long.deep$DOY==DOY.ini | Ar.long.deep$DOY==DOY.end),]
+Ar.long.deep.lowres.a <- Ar.long.deep.lowres %>% 
+  group_by(Depth_m, DOY) %>% summarize(DO_mgL = mean(DO_mgL)) 
+Jz.lowres = vector(length = nrow(Ar.long.deep.lowres.a)/2)
+Depth.lowres = unique(Ar.long.deep.lowres.a$Depth_m)
+DOY.lowres = max(Ar.long.deep.lowres.a$DOY) - min(Ar.long.deep.lowres.a$DOY)
+for(a in 1:(nrow(Ar.long.deep.lowres.a)/2)){
+  Jz.lowres[a] = (max(Ar.long.deep.lowres.a[Ar.long.deep.lowres.a$Depth_m==Depth.lowres[a],"DO_mgL"]) - 
+                    min(Ar.long.deep.lowres.a[Ar.long.deep.lowres.a$Depth_m==Depth.lowres[a],"DO_mgL"]))/DOY.lowres
+}
+
+
+ar.alpha <- filter(Bats, lake =="ar") %>% arrange(depth_1m) %>% slice(alpha.select) %>% select(alpha) #30 to 38 meters because the rate goes down after
+Jz.lowres.slice = Jz.lowres[1:length(alpha.select)]
+Ar.Jz.lowres = lm(Jz.lowres.slice ~ ar.alpha[,1])
+Ar.Jz.lowres.log = lm(Jz.lowres.slice ~ log10(ar.alpha[,1]))
+Ar.Jz.lm.list[[i]] = list(summary(Ar.Jz.lowres), summary(Ar.Jz.lowres.log))
+}
+
+compare.depth.1 = as.data.frame(Ar.long.deep.lowres.a[which(Ar.long.deep.lowres.a$DOY==147),"Depth_m"])
+compare.O2.1 = as.data.frame(Ar.long.deep.lowres.a[which(Ar.long.deep.lowres.a$DOY==147),"DO_mgL"])
+
+compare.depth.2 = as.data.frame(Ar.long.deep.lowres.a[which(Ar.long.deep.lowres.a$DOY==238),"Depth_m"])
+compare.O2.2 = as.data.frame(Ar.long.deep.lowres.a[which(Ar.long.deep.lowres.a$DOY==238),"DO_mgL"])
+
+
+#Compare Rinko and YSI O2 profiles
+par(mfrow=c(1,2))
+plot(Rinko[Rinko$lake=="ar" & Rinko$month==5, "depth"] ~ 
+       Rinko[Rinko$lake=="ar" & Rinko$month==5, "DO_mgL"],
+     ylim = c(rev(range(Rinko[Rinko$lake=="ar" & Rinko$month==5, "depth"]))),
+     xlab = "DO (mgL)",
+     ylab = "Depth",
+     pch = 16,
+     col = "blue")
+points(compare.depth.1[,1] ~ compare.O2.1[,1],
+       pch = 16,
+       col = "red")
+
+plot(Rinko[Rinko$lake=="ar" & Rinko$month==8, "depth"] ~ 
+       Rinko[Rinko$lake=="ar" & Rinko$month==8, "DO_mgL"],
+     ylim = c(rev(range(Rinko[Rinko$lake=="ar" & Rinko$month==8, "depth"]))),
+     xlab = "DO (mgL)",
+     ylab = "Depth",
+     pch = 16,
+     col = "blue")
+points(compare.depth.2[,1] ~ compare.O2.2[,1],
+       pch = 16,
+       col = "red")
+
+
+###########################################################################################
+##############Calculate Jz Arendsee using low temporal resolution - Best case##############
+###########################################################################################
+
+DOY.ini = 100
+DOY.end = 181
+
+Ar.Jz.lm.best.list = list()
+for(i in 1:4){
+  Ar.YSI = read.csv(paste0("./Data/Raw/Arendsee-cleaned/",YSI.list[i]))
+  
+  #Remove NA at bottom of profiles with niminum value of the profile
+  for(j in 1:ncol(Ar.YSI))
+  {
+    if(is.na(Ar.YSI[,j])) Ar.YSI[is.na(Ar.YSI[,j]),j] = min(Ar.YSI[,j], na.rm=T)
+  }
+  
+  #Transform to long format
+  Ar.long = pivot_longer(Ar.YSI, cols = 2:ncol(Ar.YSI), names_to = "Date", values_to = "DO_mgL")
+  #Split Date into Year, months and day
+  Ar.long$Date = substring(Ar.long$Date, 2,20) %>% strptime("%Y.%m.%d.%H.%M.%S")
+  
+  Ar.long$DOY = as.numeric(strftime(Ar.long$Date, format = "%j"))
+  
+  Ar.long = Ar.long %>% mutate(Year = substring(Date, 1, 4),
+                               mm = substring(Date, 6, 7),
+                               dd = substring(Date, 9, 10))
+  
+  #Keep only values below 30 meters to match other methods
+  Ar.long.deep = Ar.long[Ar.long$Depth_m>=30,]
+  
+  #Order the dataframe
+  Ar.long.deep = Ar.long.deep[order(Ar.long.deep$Depth_m ,Ar.long.deep$DOY),]
+  
+  #Keep only matching date to Rinko profiles
+  Ar.long.deep.lowres <- Ar.long.deep[which(Ar.long.deep$DOY==DOY.ini | Ar.long.deep$DOY==DOY.end),]
+  Ar.long.deep.lowres.a <- Ar.long.deep.lowres %>% 
+    group_by(Depth_m, DOY) %>% summarize(DO_mgL = mean(DO_mgL)) 
+  Jz.lowres = vector(length = nrow(Ar.long.deep.lowres.a)/2)
+  Depth.lowres = unique(Ar.long.deep.lowres.a$Depth_m)
+  DOY.lowres = max(Ar.long.deep.lowres.a$DOY) - min(Ar.long.deep.lowres.a$DOY)
+  for(a in 1:(nrow(Ar.long.deep.lowres.a)/2)){
+    Jz.lowres[a] = (max(Ar.long.deep.lowres.a[Ar.long.deep.lowres.a$Depth_m==Depth.lowres[a],"DO_mgL"]) - 
+                      min(Ar.long.deep.lowres.a[Ar.long.deep.lowres.a$Depth_m==Depth.lowres[a],"DO_mgL"]))/DOY.lowres
+  }
+}
+  
+ar.alpha <- filter(Bats, lake =="ar") %>% arrange(depth_1m) %>% slice(33:47) %>% select(alpha) #30 to 38 meters because the rate goes down after
+Jz.lowres.slice = Jz.lowres[-c(1:3)]
+plot(Jz.lowres.slice ~ ar.alpha[,1])
+Ar.Jz.lowres = lm(Jz.lowres.slice ~ ar.alpha[,1])
+Ar.Jz.lowres.log = lm(Jz.lowres.slice ~ log10(ar.alpha[,1]))
+Ar.Jz.lm.best.list[[i]] = list(summary(Ar.Jz.lowres), summary(Ar.Jz.lowres.log))
+
+
+
+###########################################################################################
+####################################Calculate anoxix age###################################
+###########################################################################################  
+
+#This step could be made automatic with all the objects produced earlier
+Coef.mat = data.frame(Living.inter = c(0.052309, 0.043523, 0.043853,
+                                    0.015032, 0.041168, 0.033804, 0.051304, 0.03033122,
+                                    0.04437718, 0.02365026, 0.04775718,0.07117915,
+                                    0.046327, 0.031319, 0.038923,0.055402),
+                      Living.slope = c(0.72095, 1.189771, 0.708357,
+                                       1.581965, 0.70248, 1.053361, 1.449346, 2.09699842,
+                                       0.53443228, 1.50538693, 0.62727197, 1.02305984,
+                                       0.343572, 0.656356, 0.609426, 0.929405),
+                      Log.inter = c(0.22027, 0.31388, 0.209519,
+                                    0.201798, 0.200273, 0.189948, 0.222753, 0.2692234,
+                                    0.18372782, 0.33931524, 0.18262637, 0.2933936,
+                                    0.142668, 0.174929, 0.174651, 0.26549),
+                      Log.slope = c(0.0943, 0.15067, 0.093187,
+                                    0.091595, 0.089668, 0.080629, 0.084127, 0.11615,
+                                    0.07984926, 0.07591623, 0.07512701, 0.1240715,
+                                    0.056136, 0.08113, 0.077021, 0.119656),
+                      Years = c(2017, 2018, 2019,
+                                2017, 2018, 2019, 2020, 2020,
+                                2017, 2018, 2019, 2020,
+                                2017, 2018, 2019, 2020),
+                      Method = c("Logger", "Logger", "logger",
+                                 "Low res","Low res","Low res","Low res","Low res",
+                                 "High res","High res","High res","High res",
+                                 "Low res best","Low res best","Low res best","Low res best"))
+Coef.mat <- Coef.mat %>% arrange(Years)
+
+#Select alpha from 20m to 47m deep
+ar.alpha <- filter(Bats, lake =="ar") %>% arrange(depth_1m) %>% slice(20:47) %>% select(alpha)
+ar.depth = c(20:47)
+
+#Create decay rate function
+O2.decay <- function(Matrix, Model, Year, Method, ar.alpha){
+  if(Model == "Livingstone"){
+    inter = Matrix[,1]
+    slope = Matrix[,2]
+  } else {
+    inter = Matrix[,3]
+    slope = Matrix[,4]
+  }
+  
+  inter.coef = inter[which(Matrix$Years == Year & Matrix$Method == Method)]
+  slope.coef = slope[which(Matrix$Years == Year & Matrix$Method == Method)]
+  
+  if(Model == "Livingstone")  decay.rate = inter.coef + ar.alpha * slope.coef
+  if(Model == "Log") decay.rate = inter.coef + log10(ar.alpha) * slope.coef
+  return(decay.rate)
+}
+
+
+
+test <- O2.decay(Coef.mat, "Log", 2018, "High res", ar.alpha)
+
+nday = 60
+ar.2017.YSI.Log = as.data.frame(matrix(nrow=nrow(test), ncol = nday))
+ar.2017.YSI.Log[,1] = 12
+for(i in 2:ncol(ar.2017.YSI.Log)){
+  ar.2017.YSI.Log[,i] = 12 - test[,1]*(i-1)
+}
+
+ar.2017.YSI.Log.bin <- ifelse(ar.2017.YSI.Log <= 2, 1, 0)
+ar.2017.YSI.Log.bin.cumul <- ar.2017.YSI.Log.bin
+for(j in 2:ncol(ar.2017.YSI.Log.bin.cumul)){
+  temp = ar.2017.YSI.Log.bin.cumul[,j-1]+ar.2017.YSI.Log.bin.cumul[,j]
+  temp = ifelse(temp > ar.2017.YSI.Log.bin.cumul[,j-1], temp, 0)
+  ar.2017.YSI.Log.bin.cumul[,j] = temp
+}
+ar.2017.YSI.Log.bin.cumul = rbind(matrix(nrow=19,ncol=nday),ar.2017.YSI.Log.bin.cumul)
+ar.2017.YSI.Log.bin.cumul[is.na(ar.2017.YSI.Log.bin.cumul)] = 0
+ar.2017.YSI.Log.bin.cumul = cbind(c(1:47), ar.2017.YSI.Log.bin.cumul)
+colnames(ar.2017.YSI.Log.bin.cumul)[1] = "Depth"
+
+colnames(ar.2017.YSI.Log.bin.cumul)[2:(nday+1)] = paste(seq(80,80+nday-1,1))
+
+ar.2017.YSI.Log.bin.cumul = as.data.frame(ar.2017.YSI.Log.bin.cumul)
+
+ar.2017.YSI.Log.bin.cumul.long = pivot_longer(ar.2017.YSI.Log.bin.cumul,
+                                              cols = 2:ncol(ar.2017.YSI.Log.bin.cumul),
+                                              names_to = "DOY", values_to = "AnoxAge")
+ar.2017.YSI.Log.bin.cumul.long = as.data.frame(ar.2017.YSI.Log.bin.cumul.long)
+
+ggplot(ar.2017.YSI.Log.bin.cumul.long)+
+  geom_raster(aes(x=as.numeric(DOY), y=Depth, fill=AnoxAge))+
+  scale_y_reverse()+
+   scale_fill_gradient(low="white", high="red")
+ 
+
+
 
 #Get the coefficients for Jv and Ja for each years
 Ar.Jv.2017 = Ar.Living.2017$coefficients[1,1]
