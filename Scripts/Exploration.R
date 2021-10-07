@@ -4,6 +4,7 @@ library(dplyr)
 library(segmented)
 library(minpack.lm)
 library(tidyr)
+library(ggplot2)
 Interpolation <- function(V1, V2, n){
   output = matrix(nrow = length(V1), ncol=n)
   for(i in 1:n){
@@ -500,9 +501,11 @@ AIC.table.day
 
 
 #Calcule the Livingstone models with the hourly data
+
 Ar.Jz.mat = matrix(unlist(Jz.seg.coef),nrow=6)
+
 rownames(Ar.Jz.mat) = c("Intercept", "First slope", "Second slope", "Third slope", "Useless", "No_Use")
-colnames(Ar.Jz.mat) = rownames(Ar.seg.dates)
+colnames(Ar.Jz.mat) = rownames(Ar.seg.dates)[-17]
 
 Ar.Jz = vector(length=15)
 Jz.index = c(0,1,0,0,1,0,0,0,0,0,1,0,1,0,0)
@@ -529,12 +532,12 @@ Ar.Jz.mat.day = matrix(unlist(Jz.seg.coef.day),nrow=6)
 rownames(Ar.Jz.mat.day) = c("Intercept", "First slope", "Second slope", "Third slope", "Useless", "No_Use")
 colnames(Ar.Jz.mat.day) = rownames(Ar.seg.dates.day)
 
-Ar.Jz.day = vector(length=15)
+Ar.Jz.day = vector(length=20)
 Jz.index.day = c(0,0,1,0,
                  0,0,1,0,
                  0,0,0,0,
                  0,0,1,0,
-                 0,1,0,0)
+                 0,0,0,0)
 for(i in 1:length(Jz.index.day))
 {
   if(Jz.index.day[i]) Ar.Jz.day[i] = Ar.Jz.mat.day[2,i] else Ar.Jz.day[i] = Ar.Jz.mat.day[2,i] + Ar.Jz.mat.day[3,i]
@@ -597,7 +600,7 @@ par(mfrow=c(1,1))
 plot(Ar.Jz.2017 ~ Jz.mat[, 4], las =1,
      xlab = "alpha",
      ylab = "Jz",
-     ylim = c(0.04, 0.3),
+     ylim = c(0.015, 0.2),
      main = "Arendsee", col ="blue",pch=16)
 abline(lm(Ar.Jz.2017 ~ Jz.mat[, 4]), col ="blue")
 points(Ar.Jz.2018 ~ Jz.mat[, 4], col ="chartreuse3",pch=16)
@@ -615,7 +618,7 @@ dev.off()
 pdf("./Arendsee.Jz-Alpha.SegLm.day.pdf")
 par(mfrow=c(1,1))
 plot(Ar.Jz.day.2017 ~ Jz.mat[, 4], las =1,
-     xlab = "alpha",
+     xlab = "alpha (log)",
      ylab = "Jz",
      ylim = c(0.04, 0.3),
      main = "Arendsee", col ="blue",pch=16, log="x")
@@ -648,6 +651,8 @@ YSI.list = list.files("./Data/Raw/Arendsee-cleaned")
 #Keep only csv files
 YSI.list = YSI.list[grep(pattern = ".csv",list.files("./Data/Raw/Arendsee-cleaned"))]
 YSI.yrs = c(2017,2018,2019,2020)
+Jz.YSI.list = list()
+
 
 for(i in 1:length(YSI.yrs)){
 #Read the file
@@ -717,12 +722,18 @@ for(k in 1:length(Jz.YSI)){
   
 }
 dev.off()
+Jz.YSI.list[[i]] = Jz.YSI
 }
 
 #Select the right alphas
-#2017: 30:48
+#2017: 33:48
 #2018-2020: 30:47
+#alpha.YSI.list=list()
 ar.alpha <- filter(Bats, lake =="ar") %>% arrange(depth_1m) %>% slice(c(30:47)) %>% select(alpha) #30 to 48 meters because the rate goes down after
+#alpha.YSI.list[[1]] = ar.alpha
+#alpha.YSI.list[[2]] = ar.alpha
+
+#Jz.YSI = Jz.YSI[-c(1:3)] #For 2017 only
 
 Ar.Jz.alpha.YSI = lm(Jz.YSI ~ ar.alpha[,1])
 Ar.Jz.alpha.YSI.log = lm(Jz.YSI ~ log10(ar.alpha[,1]))
@@ -759,6 +770,7 @@ summary(Ar.Jz.alpha.YSI.log)$r.squared
 ###################Calculate Jz Arendsee using low temporal resolution####################
 ##########################################################################################
 ar.alpha <- filter(Bats, lake =="ar") %>% arrange(depth_1m) %>% slice(c(30:38)) %>% select(alpha) #30 to 38 meters because the rate goes down after
+ar.alpha.rinko <- ar.alpha
 #With Rinko profiles calculated at the begining of this script
 Ar.Jz.rinko =filter(Output.Jz, lake == "ar") %>%
   filter(depth_1m>=30) %>%
@@ -786,6 +798,8 @@ rsq <- 1 - rss/tss
 
 #With matching YSI profiles
 Ar.Jz.lm.list = list()
+Jz.lowYSI.list = list()
+alpha.lowYSI.list = list()
 for(i in 1:4){
 Ar.YSI = read.csv(paste0("./Data/Raw/Arendsee-cleaned/",YSI.list[i]))
 
@@ -818,7 +832,7 @@ DOY.end = DoY$ar[[1]][2]
 alpha.select = c(30:39)}
 if(i==2){ DOY.ini = DoY$ar[[1]][1]
 DOY.end = DoY$ar[[1]][2]+2
-alpha.select = c(30:47)}
+alpha.select = c(30:44)}
 if(i==3){ DOY.ini = DoY$ar[[1]][1]
 DOY.end = DoY$ar[[1]][2]
 alpha.select = c(30:44)}
@@ -838,14 +852,18 @@ for(a in 1:(nrow(Ar.long.deep.lowres.a)/2)){
                     min(Ar.long.deep.lowres.a[Ar.long.deep.lowres.a$Depth_m==Depth.lowres[a],"DO_mgL"]))/DOY.lowres
 }
 
-
-ar.alpha <- filter(Bats, lake =="ar") %>% arrange(depth_1m) %>% slice(alpha.select) %>% select(alpha) #30 to 38 meters because the rate goes down after
+ar.alpha <- filter(Bats, lake =="ar") %>% arrange(depth_1m) %>% slice(alpha.select) %>% select(alpha)
 Jz.lowres.slice = Jz.lowres[1:length(alpha.select)]
 Ar.Jz.lowres = lm(Jz.lowres.slice ~ ar.alpha[,1])
 Ar.Jz.lowres.log = lm(Jz.lowres.slice ~ log10(ar.alpha[,1]))
 Ar.Jz.lm.list[[i]] = list(summary(Ar.Jz.lowres), summary(Ar.Jz.lowres.log))
+
+Jz.lowYSI.list[[i]] <- Jz.lowres.slice
+alpha.lowYSI.list[[i]] <- ar.alpha
+
 }
 
+#Compare O2 profiles in 2020 between YSI and Rinko
 compare.depth.1 = as.data.frame(Ar.long.deep.lowres.a[which(Ar.long.deep.lowres.a$DOY==147),"Depth_m"])
 compare.O2.1 = as.data.frame(Ar.long.deep.lowres.a[which(Ar.long.deep.lowres.a$DOY==147),"DO_mgL"])
 
@@ -882,8 +900,13 @@ points(compare.depth.2[,1] ~ compare.O2.2[,1],
 ##############Calculate Jz Arendsee using low temporal resolution - Best case##############
 ###########################################################################################
 
-DOY.ini = 100
-DOY.end = 181
+#2017: 119-187
+#2018: 133-199
+#2019: 117-200
+#2020: 124-179
+
+DOY.ini = c(119,133,117,124)
+DOY.end = c(187,199,200,179)
 
 Ar.Jz.lm.best.list = list()
 for(i in 1:4){
@@ -913,7 +936,7 @@ for(i in 1:4){
   Ar.long.deep = Ar.long.deep[order(Ar.long.deep$Depth_m ,Ar.long.deep$DOY),]
   
   #Keep only matching date to Rinko profiles
-  Ar.long.deep.lowres <- Ar.long.deep[which(Ar.long.deep$DOY==DOY.ini | Ar.long.deep$DOY==DOY.end),]
+  Ar.long.deep.lowres <- Ar.long.deep[which(Ar.long.deep$DOY==DOY.ini[i] | Ar.long.deep$DOY==DOY.end[i]),]
   Ar.long.deep.lowres.a <- Ar.long.deep.lowres %>% 
     group_by(Depth_m, DOY) %>% summarize(DO_mgL = mean(DO_mgL)) 
   Jz.lowres = vector(length = nrow(Ar.long.deep.lowres.a)/2)
@@ -923,14 +946,127 @@ for(i in 1:4){
     Jz.lowres[a] = (max(Ar.long.deep.lowres.a[Ar.long.deep.lowres.a$Depth_m==Depth.lowres[a],"DO_mgL"]) - 
                       min(Ar.long.deep.lowres.a[Ar.long.deep.lowres.a$Depth_m==Depth.lowres[a],"DO_mgL"]))/DOY.lowres
   }
-}
-  
-ar.alpha <- filter(Bats, lake =="ar") %>% arrange(depth_1m) %>% slice(33:47) %>% select(alpha) #30 to 38 meters because the rate goes down after
-Jz.lowres.slice = Jz.lowres[-c(1:3)]
+
+
+slice.beg = c(38,33,33,33)
+slice.end = c(48,47,47,47)
+
+Jz.lowres.end = c(8,3,3,3)
+
+
+ar.alpha <- filter(Bats, lake =="ar") %>% arrange(depth_1m) %>% slice(slice.beg[i]:slice.end[i]) %>% select(alpha)
+Jz.lowres.slice = Jz.lowres[-c(1:Jz.lowres.end[i])]# Remove the first few  values because they are identical (likely because sediments to volume is too low)
 plot(Jz.lowres.slice ~ ar.alpha[,1])
 Ar.Jz.lowres = lm(Jz.lowres.slice ~ ar.alpha[,1])
 Ar.Jz.lowres.log = lm(Jz.lowres.slice ~ log10(ar.alpha[,1]))
 Ar.Jz.lm.best.list[[i]] = list(summary(Ar.Jz.lowres), summary(Ar.Jz.lowres.log))
+}
+
+###########################################################################################
+##########################Comparing JZ~alpha among methods (Fig. 1)########################
+###########################################################################################  
+
+pdf("./Method Comparisons, two axis.pdf", width=10)
+par(mfrow=c(1,2))
+par(mar=c(5,5.1,2,3)+0.1)
+plot(Jz.mat.day[,2] ~ Jz.mat[,4],
+     las = 1,
+     ylim = c(0.05,0.20),
+     xlim = c(0.02,0.2),
+     xaxt="n",
+     xlab = "",
+     ylab = expression(Jz~(mg~O[2]~L^-1~d^-1)),
+     main = "2017",
+     pch = 16,
+     col = "#9BBB59")
+axis(1,c(0.02,0.05,0.1,0.15,0.2),line=1,col="red",col.ticks="red",col.axis="red")
+mtext(expression(alpha(z)),1,line=1,at=0,col="red")
+axis(1,c(Jz.mat[,4],0.2),
+     labels=c(30,35,40,45,47,48),line=3,col="blue",col.ticks="blue",col.axis="blue")
+mtext("Depth (m)",1,line=3,at=-0.01,col="blue")
+
+abline(lm(Jz.mat.day[,2] ~ Jz.mat[,4]), lty = 2,col = "#9BBB59")
+bob=Jz.mat.day[,2]
+bob2=nlsLM(bob~a*log10(b*Jz.mat[,4]),
+           start = list(a=0.03, b=150))
+curve(coef(bob2)[1] * log10(coef(bob2)[2]*x), add=T, col = "#9BBB59")
+
+points(Jz.YSI.list[[1]][-c(1:3)] ~ alpha.YSI.list[[1]][,1],
+       pch = 16,
+       col = "#00B0F0")
+abline(lm(Jz.YSI.list[[1]][-c(1:3)] ~ alpha.YSI.list[[1]][,1]), lty = 2,col = "#00B0F0")
+bob=Jz.YSI.list[[1]][-c(1:3)]
+bob2=nlsLM(bob~a*log10(b*alpha.YSI.list[[1]][,1]),
+           start = list(a=0.03, b=150))
+curve(coef(bob2)[1] * log10(coef(bob2)[2]*x), add=T, col = "#00B0F0")
+
+points(Jz.lowYSI.list[[1]] ~ alpha.lowYSI.list[[1]][,1],
+       pch = 16,
+       col = "#002060")
+abline(lm(Jz.lowYSI.list[[1]] ~ alpha.lowYSI.list[[1]][,1]), lty = 2,col = "#002060")
+bob=Jz.lowYSI.list[[1]]
+bob2=nlsLM(bob~a*log10(b*alpha.lowYSI.list[[1]][,1]),
+           start = list(a=0.03, b=150))
+ curve(coef(bob2)[1] * log10(coef(bob2)[2]*x), add=T, col = "#002060")
+legend("bottomright",
+       legend = c("DO Loggers", "High temporal res", "Low temporal res"),
+       text.col = c("#9BBB59", "#00B0F0","#002060"))
+
+
+plot(Jz.mat.day[,2] ~ Jz.mat[,4],
+     las = 1,
+     ylim = c(0.05,0.20),
+     xlim = c(0.02,0.2),
+     xlab = "",
+     ylab = expression(Jz~(mg~O[2]~L^-1~d^-1)),
+     xaxt="n",
+     main = "DO loggers",
+     pch = 16,
+     col = "#9BBB59")
+abline(lm(Jz.mat.day[,2] ~ Jz.mat[,4]), lty = 2,col = "#9BBB59")
+bob=Jz.mat.day[,2]
+bob2=nlsLM(bob~a*log10(b*Jz.mat[,4]),
+           start = list(a=0.03, b=150))
+ curve(coef(bob2)[1] * log10(coef(bob2)[2]*x), add=T, col = "#9BBB59")
+axis(1,c(0.02,0.05,0.1,0.15,0.2),line=1,col="red",col.ticks="red",col.axis="red")
+mtext(expression(alpha(z)),1,line=1,at=0,col="red")
+axis(1,c(Jz.mat[,4],0.2),
+     labels=c(30,35,40,45,47,48),line=3,col="blue",col.ticks="blue",col.axis="blue")
+mtext("Depth (m)",1,line=3,at=-0.01,col="blue")
+
+points(Jz.mat.day[,3] ~ Jz.mat[,4],
+     las = 1,
+     ylim = c(0.05,0.20),
+     xlab = expression(alpha(z)),
+     ylab = "Jz",
+     main = "",
+       pch = 16,
+       col = "#00B0F0")
+abline(lm(Jz.mat.day[,3] ~ Jz.mat[,4]), lty = 2,col = "#00B0F0")
+bob=Jz.mat.day[,3]
+bob2=nlsLM(bob~a*log10(b*Jz.mat[,4]),
+           start = list(a=0.03, b=150))
+ curve(coef(bob2)[1] * log10(coef(bob2)[2]*x), add=T, col = "#00B0F0")
+
+
+points(Jz.mat.day[,4] ~ Jz.mat[,4],
+     las = 1,
+     ylim = c(0.05,0.20),
+     xlab = expression(alpha(z)),
+     ylab = "Jz",
+     main = "",
+     pch = 16,
+       col = "#002060")
+abline(lm(Jz.mat.day[,4] ~ Jz.mat[,4]), lty = 2,col = "#002060")
+bob=Jz.mat.day[,4]
+bob2=nlsLM(bob~a*log10(b*Jz.mat[,4]),
+           start = list(a=0.03, b=150))
+ curve(coef(bob2)[1] * log10(coef(bob2)[2]*x), add=T, col = "#002060")
+legend("bottomright",
+       legend = c("2017", "2018", "2019"),
+       text.col = c("#9BBB59", "#00B0F0","#002060"))
+dev.off()
+
 
 
 
@@ -942,32 +1078,32 @@ Ar.Jz.lm.best.list[[i]] = list(summary(Ar.Jz.lowres), summary(Ar.Jz.lowres.log))
 Coef.mat = data.frame(Living.inter = c(0.052309, 0.043523, 0.043853,
                                     0.015032, 0.041168, 0.033804, 0.051304, 0.03033122,
                                     0.04437718, 0.02365026, 0.04775718,0.07117915,
-                                    0.046327, 0.031319, 0.038923,0.055402),
+                                    0.046327, 0.031319, 0.038923,0.050912),
                       Living.slope = c(0.72095, 1.189771, 0.708357,
                                        1.581965, 0.70248, 1.053361, 1.449346, 2.09699842,
                                        0.53443228, 1.50538693, 0.62727197, 1.02305984,
-                                       0.343572, 0.656356, 0.609426, 0.929405),
+                                       0.343572, 0.656356, 0.609426, 1.175155),
                       Log.inter = c(0.22027, 0.31388, 0.209519,
                                     0.201798, 0.200273, 0.189948, 0.222753, 0.2692234,
                                     0.18372782, 0.33931524, 0.18262637, 0.2933936,
-                                    0.142668, 0.174929, 0.174651, 0.26549),
+                                    0.142668, 0.174929, 0.174651, 0.310416),
                       Log.slope = c(0.0943, 0.15067, 0.093187,
                                     0.091595, 0.089668, 0.080629, 0.084127, 0.11615,
-                                    0.07984926, 0.07591623, 0.07512701, 0.1240715,
-                                    0.056136, 0.08113, 0.077021, 0.119656),
+                                    0.07984926, 0.174804, 0.07512701, 0.1240715,
+                                    0.056136, 0.08113, 0.077021, 0.146945),
                       Years = c(2017, 2018, 2019,
                                 2017, 2018, 2019, 2020, 2020,
                                 2017, 2018, 2019, 2020,
                                 2017, 2018, 2019, 2020),
                       Method = c("Logger", "Logger", "logger",
-                                 "Low res","Low res","Low res","Low res","Low res",
+                                 "Low res","Low res","Low res","Low res","Low res rinko",
                                  "High res","High res","High res","High res",
                                  "Low res best","Low res best","Low res best","Low res best"))
 Coef.mat <- Coef.mat %>% arrange(Years)
 
 #Select alpha from 20m to 47m deep
-ar.alpha <- filter(Bats, lake =="ar") %>% arrange(depth_1m) %>% slice(20:47) %>% select(alpha)
-ar.depth = c(20:47)
+ar.alpha <- filter(Bats, lake =="ar") %>% arrange(depth_1m) %>% slice(30:47) %>% select(alpha)
+ar.depth = c(30:47)
 
 #Create decay rate function
 O2.decay <- function(Matrix, Model, Year, Method, ar.alpha){
@@ -987,46 +1123,727 @@ O2.decay <- function(Matrix, Model, Year, Method, ar.alpha){
   return(decay.rate)
 }
 
+#Select the matching Chemistry depths and time
+ar.chem <- filter(Chemistry, lake =="ar") %>% filter(depth == 30 | depth == 40 | depth==45 | depth==46 | depth==47 | depth==48)
+
+#In the first visit of 2020, the maximum sampled depth is 48m in the chemistry dataset, but the YSI
+#profile stoped at 47m. I ASSUME here that the 48m is in fact 47m
+ar.chem.1 <- filter(ar.chem, date == "2020-05-26") 
+ar.chem.2 <- filter(ar.chem, date == "2020-08-25")
 
 
-test <- O2.decay(Coef.mat, "Log", 2018, "High res", ar.alpha)
+#Calculate mean CO2 and CH4 concentrations
+ar.chem.1.co2 = group_by(ar.chem.1, depth) %>% summarize(CO2 = mean(conc.CO2.corrected))
+ar.chem.1.ch4 = group_by(ar.chem.1, depth) %>% summarize(CH4 = mean(conc.CH4.insitu))
+ar.chem.2.co2 = group_by(ar.chem.2, depth) %>% summarize(CO2 = mean(conc.CO2.corrected))
+ar.chem.2.ch4 = group_by(ar.chem.2, depth) %>% summarize(CH4 = mean(conc.CH4.insitu))
 
-nday = 60
-ar.2017.YSI.Log = as.data.frame(matrix(nrow=nrow(test), ncol = nday))
-ar.2017.YSI.Log[,1] = 12
+#Remove duplicated lines for other variables
+ar.chem.1.single = ar.chem.1[,-c(42:50)]
+ar.chem.1.single = unique(ar.chem.1.single)
+ar.chem.2.single = ar.chem.2[,-c(42:50)]
+ar.chem.2.single = unique(ar.chem.2.single)
+
+#Depth used in 2020
+aa.depth = c(30,40,45,46,47)
+
+##################################High temporal resolution, log model####################
+O2.consumption.rate <- O2.decay(Coef.mat, "Log", 2020, "High res", ar.alpha)
+
+nday = 150 #Numbers of days to simulate
+dbeg = 135 #First day of simulated stratification
+ar.2017.YSI.Log = as.data.frame(matrix(nrow=nrow(O2.consumption.rate), ncol = nday))
+ar.2017.YSI.Log[,1] = 12.3
 for(i in 2:ncol(ar.2017.YSI.Log)){
-  ar.2017.YSI.Log[,i] = 12 - test[,1]*(i-1)
+  ar.2017.YSI.Log[,i] = 12.3 - O2.consumption.rate[,1]*(i-1)
 }
+ar.2017.YSI.Log[ar.2017.YSI.Log<0] = 0
 
-ar.2017.YSI.Log.bin <- ifelse(ar.2017.YSI.Log <= 2, 1, 0)
+
+O2.threshold = 2
+ar.2017.YSI.Log.bin <- ifelse(ar.2017.YSI.Log <= O2.threshold, 1, 0)
 ar.2017.YSI.Log.bin.cumul <- ar.2017.YSI.Log.bin
 for(j in 2:ncol(ar.2017.YSI.Log.bin.cumul)){
   temp = ar.2017.YSI.Log.bin.cumul[,j-1]+ar.2017.YSI.Log.bin.cumul[,j]
   temp = ifelse(temp > ar.2017.YSI.Log.bin.cumul[,j-1], temp, 0)
   ar.2017.YSI.Log.bin.cumul[,j] = temp
 }
-ar.2017.YSI.Log.bin.cumul = rbind(matrix(nrow=19,ncol=nday),ar.2017.YSI.Log.bin.cumul)
-ar.2017.YSI.Log.bin.cumul[is.na(ar.2017.YSI.Log.bin.cumul)] = 0
-ar.2017.YSI.Log.bin.cumul = cbind(c(1:47), ar.2017.YSI.Log.bin.cumul)
+# ar.2017.YSI.Log.bin.cumul = rbind(matrix(nrow=29,ncol=nday),ar.2017.YSI.Log.bin.cumul)
+# ar.2017.YSI.Log.bin.cumul[is.na(ar.2017.YSI.Log.bin.cumul)] = 0
+ar.2017.YSI.Log.bin.cumul = cbind(c(30:47), ar.2017.YSI.Log.bin.cumul)
 colnames(ar.2017.YSI.Log.bin.cumul)[1] = "Depth"
 
-colnames(ar.2017.YSI.Log.bin.cumul)[2:(nday+1)] = paste(seq(80,80+nday-1,1))
+colnames(ar.2017.YSI.Log.bin.cumul)[2:(nday+1)] = paste(seq(dbeg,dbeg+nday-1,1))
 
 ar.2017.YSI.Log.bin.cumul = as.data.frame(ar.2017.YSI.Log.bin.cumul)
 
-ar.2017.YSI.Log.bin.cumul.long = pivot_longer(ar.2017.YSI.Log.bin.cumul,
-                                              cols = 2:ncol(ar.2017.YSI.Log.bin.cumul),
-                                              names_to = "DOY", values_to = "AnoxAge")
-ar.2017.YSI.Log.bin.cumul.long = as.data.frame(ar.2017.YSI.Log.bin.cumul.long)
+# ar.2017.YSI.Log.bin.cumul.long = pivot_longer(ar.2017.YSI.Log.bin.cumul,
+#                                               cols = 2:ncol(ar.2017.YSI.Log.bin.cumul),
+#                                               names_to = "DOY", values_to = "HypoxAge")
+# ar.2017.YSI.Log.bin.cumul.long = as.data.frame(ar.2017.YSI.Log.bin.cumul.long)
 
-ggplot(ar.2017.YSI.Log.bin.cumul.long)+
-  geom_raster(aes(x=as.numeric(DOY), y=Depth, fill=AnoxAge))+
-  scale_y_reverse()+
-   scale_fill_gradient(low="white", high="red")
+# ggplot(ar.2017.YSI.Log.bin.cumul.long)+
+#   geom_raster(aes(x=as.numeric(DOY), y=Depth, fill=HypoxAge))+
+#   scale_y_reverse()+
+#    scale_fill_gradient(low="white", high="red")+
+#   ggtitle("2018")
  
 
+#Align the modeled oxygen profile with the real data to associate anoxic age with 
+#reduced compounds concentration using the lowest sum of squared difference
+
+i=4
+Ar.YSI = read.csv(paste0("./Data/Raw/Arendsee-cleaned/",YSI.list[i]))
+#Remove NA at bottom of profiles with niminum value of the profile
+for(j in 1:ncol(Ar.YSI))
+{
+  if(is.na(Ar.YSI[,j])) Ar.YSI[is.na(Ar.YSI[,j]),j] = min(Ar.YSI[,j], na.rm=T)
+}
+
+#Transform to long format
+Ar.long = pivot_longer(Ar.YSI, cols = 2:ncol(Ar.YSI), names_to = "Date", values_to = "DO_mgL")
+#Split Date into Year, months and day
+Ar.long$Date = substring(Ar.long$Date, 2,20) %>% strptime("%Y.%m.%d.%H.%M.%S")
+
+Ar.long$DOY = as.numeric(strftime(Ar.long$Date, format = "%j"))
+
+Ar.long = Ar.long %>% mutate(Year = substring(Date, 1, 4),
+                             mm = substring(Date, 6, 7),
+                             dd = substring(Date, 9, 10))
+
+#Keep only values below 30 meters to match other methods
+Ar.long.deep = Ar.long[Ar.long$Depth_m>=30,]
+
+#Order the dataframe
+Ar.long.deep = Ar.long.deep[order(Ar.long.deep$Depth_m ,Ar.long.deep$DOY),]
 
 
+#Select the date matching chemistry observations
+#In 2020, Arendsee was sampled on 2020-05-26 and 2020-08-25	
+Ar.first.profile = Ar.long.deep[,-2] %>% filter(mm == "05", dd == "26") %>% 
+  group_by(Depth_m) %>% summarize(DO_mgL = mean(DO_mgL))
+
+Ar.second.profile = Ar.long.deep[,-2] %>% filter(mm == "08", dd == "25") %>% 
+  group_by(Depth_m) %>% summarize(DO_mgL = mean(DO_mgL))
+
+Match.temp.1 = ar.2017.YSI.Log
+for(i in 1:ncol(ar.2017.YSI.Log)){
+  Match.temp.1[,i] = ar.2017.YSI.Log[,i] - Ar.first.profile[,2]
+}
+
+Match.temp.1.abs = (Match.temp.1)^2
+Match.day.1 = which(colSums(Match.temp.1.abs) == min(colSums(Match.temp.1.abs)))
+
+Match.temp.2 = ar.2017.YSI.Log
+for(i in 1:ncol(ar.2017.YSI.Log)){
+  Match.temp.2[,i] = ar.2017.YSI.Log[,i] - Ar.second.profile[,2]
+}
+
+Match.temp.2.abs = (Match.temp.2)^2
+Match.day.2.modelled = which(colSums(Match.temp.2.abs) == min(colSums(Match.temp.2.abs)))
+min(colSums(Match.temp.2.abs))
+
+#The lines in comments before are to match modeled data with the second dates
+#Here, we use the first profile as the starting date and use the real date of the second profile
+#which was 91 days after. Graphically, it doesn't make much difference
+#only a translation toward higher anoxic age values
+Match.day.2 = Match.day.1+91
+
+#Select the two matching modeled anoxic age profiles
+aa.first = ar.2017.YSI.Log.bin.cumul[,Match.day.1+1]
+aa.second = ar.2017.YSI.Log.bin.cumul[,Match.day.2+1]
+
+
+
+###############################High temporal resolution, Livingstone model#########################
+O2.living.highres <- O2.decay(Coef.mat, "Livingstone", 2020, "High res", ar.alpha)
+
+ar.2017.YSI.Living = as.data.frame(matrix(nrow=nrow(O2.living.highres), ncol = nday))
+ar.2017.YSI.Living[,1] = 12.3
+for(i in 2:ncol(ar.2017.YSI.Living)){
+  ar.2017.YSI.Living[,i] = 12.3 - O2.living.highres[,1]*(i-1)
+}
+ar.2017.YSI.Living[ar.2017.YSI.Living<0] = 0
+
+
+ar.2017.YSI.Living.bin <- ifelse(ar.2017.YSI.Living <= O2.threshold, 1, 0)
+ar.2017.YSI.Living.bin.cumul <- ar.2017.YSI.Living.bin
+for(j in 2:ncol(ar.2017.YSI.Living.bin.cumul)){
+  temp = ar.2017.YSI.Living.bin.cumul[,j-1]+ar.2017.YSI.Living.bin.cumul[,j]
+  temp = ifelse(temp > ar.2017.YSI.Living.bin.cumul[,j-1], temp, 0)
+  ar.2017.YSI.Living.bin.cumul[,j] = temp
+}
+# ar.2017.YSI.Living.bin.cumul = rbind(matrix(nrow=29,ncol=nday),ar.2017.YSI.Living.bin.cumul)
+# ar.2017.YSI.Living.bin.cumul[is.na(ar.2017.YSI.Living.bin.cumul)] = 0
+ar.2017.YSI.Living.bin.cumul = cbind(c(30:47), ar.2017.YSI.Living.bin.cumul)
+colnames(ar.2017.YSI.Living.bin.cumul)[1] = "Depth"
+
+colnames(ar.2017.YSI.Living.bin.cumul)[2:(nday+1)] = paste(seq(dbeg,dbeg+nday-1,1))
+
+ar.2017.YSI.Living.bin.cumul = as.data.frame(ar.2017.YSI.Living.bin.cumul)
+
+# ar.2017.YSI.Living.bin.cumul.long = pivot_longer(ar.2017.YSI.Living.bin.cumul,
+#                                               cols = 2:ncol(ar.2017.YSI.Living.bin.cumul),
+#                                               names_to = "DOY", values_to = "HypoxAge")
+# ar.2017.YSI.Living.bin.cumul.long = as.data.frame(ar.2017.YSI.Living.bin.cumul.long)
+
+# ggplot(ar.2017.YSI.Living.bin.cumul.long)+
+#   geom_raster(aes(x=as.numeric(DOY), y=Depth, fill=HypoxAge))+
+#   scale_y_reverse()+
+#    scale_fill_gradient(low="white", high="red")+
+#   ggtitle("2018")
+
+
+#Select the date matching chemistry observations
+#In 2020, Arendsee was sampled on 2020-05-26 and 2020-08-25	
+Ar.first.profile = Ar.long.deep[,-2] %>% filter(mm == "05", dd == "26") %>% 
+  group_by(Depth_m) %>% summarize(DO_mgL = mean(DO_mgL))
+
+Ar.second.profile = Ar.long.deep[,-2] %>% filter(mm == "08", dd == "25") %>% 
+  group_by(Depth_m) %>% summarize(DO_mgL = mean(DO_mgL))
+
+Match.temp.1.Living = ar.2017.YSI.Living
+for(i in 1:ncol(ar.2017.YSI.Living)){
+  Match.temp.1.Living[,i] = ar.2017.YSI.Living[,i] - Ar.first.profile[,2]
+}
+
+Match.temp.1.abs.Living = (Match.temp.1.Living)^2
+Match.day.1.Living = which(colSums(Match.temp.1.abs.Living) == min(colSums(Match.temp.1.abs.Living)))
+min(colSums(Match.temp.1.abs.Living))
+
+
+Match.temp.2.Living = ar.2017.YSI.Living
+for(i in 1:ncol(ar.2017.YSI.Living)){
+  Match.temp.2.Living[,i] = ar.2017.YSI.Living[,i] - Ar.second.profile[,2]
+}
+
+Match.temp.2.abs.Living = (Match.temp.2.Living)^2
+Match.day.2.Living.modelled = which(colSums(Match.temp.2.abs.Living) == min(colSums(Match.temp.2.abs.Living)))
+min(colSums(Match.temp.2.abs.Living))
+
+#The lines in comments before are to match modeled data with the second dates
+#Here, we use the first profile as the starting date and use the real date of the second profile
+#which was 91 days after. Graphically, it doesn't make much difference
+#only a translation toward higher anoxic age values
+Match.day.2.Living = Match.day.1.Living+91
+
+#Select the two matching modeled anoxic age profiles
+aa.first.Living = ar.2017.YSI.Living.bin.cumul[,Match.day.1.Living+1]
+aa.second.Living = ar.2017.YSI.Living.bin.cumul[,Match.day.2.Living+1]
+
+
+
+
+####################################Low temporal resolution, rinko, Log-linear################################
+
+O2.log.LowResRinko <- O2.decay(Coef.mat, "Log", 2020, "Low res rinko", ar.alpha)
+ar.low.Log = as.data.frame(matrix(nrow=nrow(O2.log.LowResRinko), ncol = nday))
+ar.low.Log[,1] = 12.3
+for(i in 2:ncol(ar.low.Log)){
+  ar.low.Log[,i] = 12.3 - O2.log.LowResRinko[,1]*(i-1)
+}
+ar.low.Log[ar.low.Log<0] = 0
+
+
+ar.low.Log.bin <- ifelse(ar.low.Log <= O2.threshold, 1, 0)
+ar.low.Log.bin.cumul <- ar.low.Log.bin
+for(j in 2:ncol(ar.low.Log.bin.cumul)){
+  temp = ar.low.Log.bin.cumul[,j-1]+ar.low.Log.bin.cumul[,j]
+  temp = ifelse(temp > ar.low.Log.bin.cumul[,j-1], temp, 0)
+  ar.low.Log.bin.cumul[,j] = temp
+}
+# ar.low.Log.bin.cumul = rbind(matrix(nrow=29,ncol=nday),ar.low.Log.bin.cumul)
+# ar.low.Log.bin.cumul[is.na(ar.low.Log.bin.cumul)] = 0
+ar.low.Log.bin.cumul = cbind(c(30:47), ar.low.Log.bin.cumul)
+colnames(ar.low.Log.bin.cumul)[1] = "Depth"
+
+colnames(ar.low.Log.bin.cumul)[2:(nday+1)] = paste(seq(dbeg,dbeg+nday-1,1))
+
+ar.low.Log.bin.cumul = as.data.frame(ar.low.Log.bin.cumul)
+
+# ar.low.Log.bin.cumul.long = pivot_longer(ar.low.Log.bin.cumul,
+#                                               cols = 2:ncol(ar.low.Log.bin.cumul),
+#                                               names_to = "DOY", values_to = "HypoxAge")
+# ar.low.Log.bin.cumul.long = as.data.frame(ar.low.Log.bin.cumul.long)
+# 
+# ggplot(ar.low.Log.bin.cumul.long)+
+#   geom_raster(aes(x=as.numeric(DOY), y=Depth, fill=HypoxAge))+
+#   scale_y_reverse()+
+#    scale_fill_gradient(low="white", high="red")+
+#   ggtitle("2018")
+
+
+#Select the date matching chemistry observations
+#In 2020, Arendsee was sampled on 2020-05-26 and 2020-08-25	
+Ar.first.profile.low = filter(Ar.long.deep.lowres.a, DOY==147)
+Ar.second.profile.low = filter(Ar.long.deep.lowres.a, DOY==238)
+
+Match.temp.1.low = ar.low.Log
+for(i in 1:ncol(ar.low.Log)){
+  Match.temp.1.low[,i] = ar.low.Log[,i] - Ar.first.profile.low[,3]
+}
+
+Match.temp.1.low.abs = (Match.temp.1.low)^2
+Match.day.1.low = which(colSums(Match.temp.1.low.abs) == min(colSums(Match.temp.1.low.abs)))
+
+Match.temp.2.low = ar.low.Log
+for(i in 1:ncol(ar.low.Log)){
+  Match.temp.2.low[,i] = ar.low.Log[,i] - Ar.second.profile.low[,3]
+}
+Match.temp.2.low.abs = (Match.temp.2.low)^2
+Match.day.2.low.modelled = which(colSums(Match.temp.2.low.abs) == min(colSums(Match.temp.2.low.abs)))
+min(colSums(Match.temp.2.low.abs))
+
+#The lines in comments before are to match modeled data with the second dates
+#Here, we use the first profile as the starting date and use the real date of the second profile
+#which was 91 days after. Graphically, it doesn't make much difference
+#only a translation toward higher anoxic age values
+Match.day.2.low = Match.day.1.low+91
+
+#Select the two matching modeled anoxic age profiles
+aa.first.low = ar.low.Log.bin.cumul[,Match.day.1.low+1]
+aa.second.low = ar.low.Log.bin.cumul[,Match.day.2.low+1]
+
+
+
+################################Low temporal resolution (Rinko) livingstone########################
+
+O2.living.LowResRinko <- O2.decay(Coef.mat, "Livingstone", 2020, "Low res rinko", ar.alpha)
+
+ar.low.Living = as.data.frame(matrix(nrow=nrow(O2.living.LowResRinko), ncol = nday))
+ar.low.Living[,1] = 12.3
+for(i in 2:ncol(ar.low.Living)){
+  ar.low.Living[,i] = 12.3 - O2.living.LowResRinko[,1]*(i-1)
+}
+ar.low.Living[ar.low.Living<0] = 0
+
+ar.low.Living.bin <- ifelse(ar.low.Living <= O2.threshold, 1, 0)
+ar.low.Living.bin.cumul <- ar.low.Living.bin
+for(j in 2:ncol(ar.low.Living.bin.cumul)){
+  temp = ar.low.Living.bin.cumul[,j-1]+ar.low.Living.bin.cumul[,j]
+  temp = ifelse(temp > ar.low.Living.bin.cumul[,j-1], temp, 0)
+  ar.low.Living.bin.cumul[,j] = temp
+}
+# ar.low.Living.bin.cumul = rbind(matrix(nrow=29,ncol=nday),ar.low.Living.bin.cumul)
+# ar.low.Living.bin.cumul[is.na(ar.low.Living.bin.cumul)] = 0
+ar.low.Living.bin.cumul = cbind(c(30:47), ar.low.Living.bin.cumul)
+colnames(ar.low.Living.bin.cumul)[1] = "Depth"
+
+colnames(ar.low.Living.bin.cumul)[2:(nday+1)] = paste(seq(dbeg,dbeg+nday-1,1))
+
+ar.low.Living.bin.cumul = as.data.frame(ar.low.Living.bin.cumul)
+
+# ar.low.Living.bin.cumul.long = pivot_longer(ar.low.Living.bin.cumul,
+#                                               cols = 2:ncol(ar.low.Living.bin.cumul),
+#                                               names_to = "DOY", values_to = "HypoxAge")
+# ar.low.Living.bin.cumul.long = as.data.frame(ar.low.Living.bin.cumul.long)
+# 
+# ggplot(ar.low.Living.bin.cumul.long)+
+#   geom_raster(aes(x=as.numeric(DOY), y=Depth, fill=HypoxAge))+
+#   scale_y_reverse()+
+#    scale_fill_gradient(low="white", high="red")+
+#   ggtitle("2018")
+
+#Select the date matching chemistry observations
+#In 2020, Arendsee was sampled on 2020-05-26 and 2020-08-25	
+Ar.first.profile.low = filter(Ar.long.deep.lowres.a, DOY==147)
+Ar.second.profile.low = filter(Ar.long.deep.lowres.a, DOY==238)
+
+Match.temp.1.low.living = ar.low.Living
+for(i in 1:ncol(ar.low.Living)){
+  Match.temp.1.low.living[,i] = ar.low.Living[,i] - Ar.first.profile.low[,3]
+}
+
+Match.temp.1.low.abs.living = (Match.temp.1.low.living)^2
+Match.day.1.low.living = which(colSums(Match.temp.1.low.abs.living) == min(colSums(Match.temp.1.low.abs.living)))
+
+Match.temp.2.low.living = ar.low.Living
+for(i in 1:ncol(ar.low.Living)){
+  Match.temp.2.low.living[,i] = ar.low.Living[,i] - Ar.second.profile.low[,3]
+}
+Match.temp.2.low.abs.living = (Match.temp.2.low.living)^2
+Match.day.2.low.living.modelled = which(colSums(Match.temp.2.low.abs.living) == min(colSums(Match.temp.2.low.abs.living)))
+min(colSums(Match.temp.2.low.abs.living))
+
+#The lines in comments before are to match modeled data with the second dates
+#Here, we use the first profile as the starting date and use the real date of the second profile
+#which was 91 days after. Graphically, it doesn't make much difference
+#only a translation toward higher anoxic age values
+Match.day.2.low.living = Match.day.1.low.living+91
+
+#Select the two matching modeled anoxic age profiles
+aa.first.low.living = ar.low.Living.bin.cumul[,Match.day.1.low.living+1]
+aa.second.low.living = ar.low.Living.bin.cumul[,Match.day.2.low.living+1]
+
+
+
+
+####################################Low temporal resolution, YSI, Log-linear################################
+
+O2.log.LowResYSI <- O2.decay(Coef.mat, "Log", 2020, "Low res", ar.alpha)
+ar.low.Log = as.data.frame(matrix(nrow=nrow(O2.log.LowResYSI), ncol = nday))
+ar.low.Log[,1] = 12.3
+for(i in 2:ncol(ar.low.Log)){
+  ar.low.Log[,i] = 12.3 - O2.log.LowResYSI[,1]*(i-1)
+}
+ar.low.Log[ar.low.Log<0] = 0
+
+
+ar.low.Log.bin <- ifelse(ar.low.Log <= O2.threshold, 1, 0)
+ar.low.Log.bin.cumul <- ar.low.Log.bin
+for(j in 2:ncol(ar.low.Log.bin.cumul)){
+  temp = ar.low.Log.bin.cumul[,j-1]+ar.low.Log.bin.cumul[,j]
+  temp = ifelse(temp > ar.low.Log.bin.cumul[,j-1], temp, 0)
+  ar.low.Log.bin.cumul[,j] = temp
+}
+# ar.low.Log.bin.cumul = rbind(matrix(nrow=29,ncol=nday),ar.low.Log.bin.cumul)
+# ar.low.Log.bin.cumul[is.na(ar.low.Log.bin.cumul)] = 0
+ar.low.Log.bin.cumul = cbind(c(30:47), ar.low.Log.bin.cumul)
+colnames(ar.low.Log.bin.cumul)[1] = "Depth"
+
+colnames(ar.low.Log.bin.cumul)[2:(nday+1)] = paste(seq(dbeg,dbeg+nday-1,1))
+
+ar.low.Log.bin.cumul = as.data.frame(ar.low.Log.bin.cumul)
+
+# ar.low.Log.bin.cumul.long = pivot_longer(ar.low.Log.bin.cumul,
+#                                               cols = 2:ncol(ar.low.Log.bin.cumul),
+#                                               names_to = "DOY", values_to = "HypoxAge")
+# ar.low.Log.bin.cumul.long = as.data.frame(ar.low.Log.bin.cumul.long)
+# 
+# ggplot(ar.low.Log.bin.cumul.long)+
+#   geom_raster(aes(x=as.numeric(DOY), y=Depth, fill=HypoxAge))+
+#   scale_y_reverse()+
+#    scale_fill_gradient(low="white", high="red")+
+#   ggtitle("2018")
+
+
+#Select the date matching chemistry observations
+#In 2020, Arendsee was sampled on 2020-05-26 and 2020-08-25
+#Same object as High resolution YSI
+
+Match.temp.1.lowYSI = ar.low.Log
+for(i in 1:ncol(ar.low.Log)){
+  Match.temp.1.lowYSI[,i] = ar.low.Log[,i] - Ar.first.profile[,2]
+}
+
+Match.temp.1.low.absYSI = (Match.temp.1.lowYSI)^2
+Match.day.1.lowYSI = which(colSums(Match.temp.1.low.absYSI) == min(colSums(Match.temp.1.low.absYSI)))
+
+Match.temp.2.lowYSI = ar.low.Log
+for(i in 1:ncol(ar.low.Log)){
+  Match.temp.2.lowYSI[,i] = ar.low.Log[,i] - Ar.second.profile[,2]
+}
+Match.temp.2.low.absYSI = (Match.temp.2.lowYSI)^2
+Match.day.2.lowYSI.modelled = which(colSums(Match.temp.2.low.absYSI) == min(colSums(Match.temp.2.low.absYSI)))
+min(colSums(Match.temp.2.low.absYSI))
+
+#The lines in comments before are to match modeled data with the second dates
+#Here, we use the first profile as the starting date and use the real date of the second profile
+#which was 91 days after. Graphically, it doesn't make much difference
+#only a translation toward higher anoxic age values
+Match.day.2.lowYSI = Match.day.1.lowYSI+91
+
+#Select the two matching modeled anoxic age profiles
+aa.first.lowYSI = ar.low.Log.bin.cumul[,Match.day.1.lowYSI+1]
+aa.second.lowYSI = ar.low.Log.bin.cumul[,Match.day.2.lowYSI+1]
+
+
+####################################Low temporal resolution, YSI, Livingstone################################
+
+O2.Living.LowResYSI <- O2.decay(Coef.mat, "Livingstone", 2020, "Low res", ar.alpha)
+ar.low.Living = as.data.frame(matrix(nrow=nrow(O2.Living.LowResYSI), ncol = nday))
+ar.low.Living[,1] = 12.3
+for(i in 2:ncol(ar.low.Living)){
+  ar.low.Living[,i] = 12.3 - O2.Living.LowResYSI[,1]*(i-1)
+}
+ar.low.Living[ar.low.Living<0] = 0
+
+
+ar.low.Living.bin <- ifelse(ar.low.Living <= O2.threshold, 1, 0)
+ar.low.Living.bin.cumul <- ar.low.Living.bin
+for(j in 2:ncol(ar.low.Living.bin.cumul)){
+  temp = ar.low.Living.bin.cumul[,j-1]+ar.low.Living.bin.cumul[,j]
+  temp = ifelse(temp > ar.low.Living.bin.cumul[,j-1], temp, 0)
+  ar.low.Living.bin.cumul[,j] = temp
+}
+# ar.low.Living.bin.cumul = rbind(matrix(nrow=29,ncol=nday),ar.low.Living.bin.cumul)
+# ar.low.Living.bin.cumul[is.na(ar.low.Living.bin.cumul)] = 0
+ar.low.Living.bin.cumul = cbind(c(30:47), ar.low.Living.bin.cumul)
+colnames(ar.low.Living.bin.cumul)[1] = "Depth"
+
+colnames(ar.low.Living.bin.cumul)[2:(nday+1)] = paste(seq(dbeg,dbeg+nday-1,1))
+
+ar.low.Living.bin.cumul = as.data.frame(ar.low.Living.bin.cumul)
+
+# ar.low.Living.bin.cumul.long = pivot_longer(ar.low.Living.bin.cumul,
+#                                               cols = 2:ncol(ar.low.Living.bin.cumul),
+#                                               names_to = "DOY", values_to = "HypoxAge")
+# ar.low.Living.bin.cumul.long = as.data.frame(ar.low.Living.bin.cumul.long)
+# 
+# ggplot(ar.low.Living.bin.cumul.long)+
+#   geom_raster(aes(x=as.numeric(DOY), y=Depth, fill=HypoxAge))+
+#   scale_y_reverse()+
+#    scale_fill_gradient(low="white", high="red")+
+#   ggtitle("2018")
+
+
+#Select the date matching chemistry observations
+#In 2020, Arendsee was sampled on 2020-05-26 and 2020-08-25
+#Same object as High resolution YSI
+
+Match.temp.1.lowYSI.living = ar.low.Living
+for(i in 1:ncol(ar.low.Living)){
+  Match.temp.1.lowYSI.living[,i] = ar.low.Living[,i] - Ar.first.profile[,2]
+}
+
+# Match.temp.1.low.absYSI.living = abs(Match.temp.1.lowYSI.living)
+Match.temp.1.low.absYSI.living = (Match.temp.1.lowYSI.living)^2
+Match.day.1.lowYSI.living = which(colSums(Match.temp.1.low.absYSI.living) == min(colSums(Match.temp.1.low.absYSI.living)))
+
+Match.temp.2.lowYSI.living = ar.low.Living
+for(i in 1:ncol(ar.low.Living)){
+  Match.temp.2.lowYSI.living[,i] = ar.low.Living[,i] - Ar.second.profile[,2]
+}
+# Match.temp.2.low.absYSI.living = abs(Match.temp.2.lowYSI.living)
+Match.temp.2.low.absYSI.living = (Match.temp.2.lowYSI.living)^2
+Match.day.2.lowYSI.living.modelled = which(colSums(Match.temp.2.low.absYSI.living) == min(colSums(Match.temp.2.low.absYSI.living)))
+min(colSums(Match.temp.2.low.absYSI.living))
+
+#The lines in comments before are to match modeled data with the second dates
+#Here, we use the first profile as the starting date and use the real date of the second profile
+#which was 91 days after. Graphically, it doesn't make much difference
+#only a translation toward higher anoxic age values
+Match.day.2.lowYSI.living = Match.day.1.lowYSI.living+91
+
+#Select the two matching modeled anoxic age profiles
+aa.first.lowYSI.living = ar.low.Living.bin.cumul[,Match.day.1.lowYSI.living+1]
+aa.second.lowYSI.living = ar.low.Living.bin.cumul[,Match.day.2.lowYSI.living+1]
+
+
+
+
+####################################Low temporal resolution, best case, log################################
+
+O2.Log.LowResbest <- O2.decay(Coef.mat, "Log", 2020, "Low res best", ar.alpha)
+ar.low.best = as.data.frame(matrix(nrow=nrow(O2.Log.LowResbest), ncol = nday))
+ar.low.best[,1] = 12.3
+for(i in 2:ncol(ar.low.best)){
+  ar.low.best[,i] = 12.3 - O2.Log.LowResbest[,1]*(i-1)
+}
+ar.low.best[ar.low.best<0] = 0
+
+
+ar.low.best.bin <- ifelse(ar.low.best <= O2.threshold, 1, 0)
+ar.low.best.bin.cumul <- ar.low.best.bin
+for(j in 2:ncol(ar.low.best.bin.cumul)){
+  temp = ar.low.best.bin.cumul[,j-1]+ar.low.best.bin.cumul[,j]
+  temp = ifelse(temp > ar.low.best.bin.cumul[,j-1], temp, 0)
+  ar.low.best.bin.cumul[,j] = temp
+}
+# ar.low.best.bin.cumul = rbind(matrix(nrow=29,ncol=nday),ar.low.best.bin.cumul)
+# ar.low.best.bin.cumul[is.na(ar.low.best.bin.cumul)] = 0
+ar.low.best.bin.cumul = cbind(c(30:47), ar.low.best.bin.cumul)
+colnames(ar.low.best.bin.cumul)[1] = "Depth"
+
+colnames(ar.low.best.bin.cumul)[2:(nday+1)] = paste(seq(dbeg,dbeg+nday-1,1))
+
+ar.low.best.bin.cumul = as.data.frame(ar.low.best.bin.cumul)
+
+ar.low.best.bin.cumul.long = pivot_longer(ar.low.best.bin.cumul,
+                                          cols = 2:ncol(ar.low.best.bin.cumul),
+                                          names_to = "DOY", values_to = "HypoxAge")
+ar.low.best.bin.cumul.long = as.data.frame(ar.low.best.bin.cumul.long)
+
+# ggplot(ar.low.best.bin.cumul.long)+
+#   geom_raster(aes(x=as.numeric(DOY), y=Depth, fill=HypoxAge))+
+#   scale_y_reverse()+
+#    scale_fill_gradient(low="white", high="red")+
+#   ggtitle("2018")
+
+
+#Select the date matching chemistry observations
+#In 2020, Arendsee was sampled on 2020-05-26 (day 147) and 2020-08-25 (day 238)
+#Same object as High resolution YSI
+
+Match.temp.1.lowbest = ar.low.best
+for(i in 1:ncol(ar.low.best)){
+  Match.temp.1.lowbest[,i] = ar.low.best[,i] - Ar.first.profile[,2]
+}
+
+# Match.temp.1.low.absYSI.living = abs(Match.temp.1.lowYSI.living)
+Match.temp.1.lowbest.abs = (Match.temp.1.lowbest)^2
+Match.day.1.lowbest = which(colSums(Match.temp.1.lowbest.abs) == min(colSums(Match.temp.1.lowbest.abs)))
+
+Match.temp.2.lowbest = ar.low.best
+for(i in 1:ncol(ar.low.best)){
+  Match.temp.2.lowbest[,i] = ar.low.best[,i] - Ar.second.profile[,2]
+}
+
+Match.temp.2.lowbest.abs = (Match.temp.2.lowbest)^2
+Match.day.2.lowbest.modelled = which(colSums(Match.temp.2.lowbest.abs) == min(colSums(Match.temp.2.lowbest.abs)))
+min(colSums(Match.temp.2.lowbest.abs))
+
+#The lines in comments before are to match modeled data with the second dates
+#Here, we use the first profile as the starting date and use the real date of the second profile
+#which was 91 days after. Graphically, it doesn't make much difference
+#only a translation toward higher anoxic age values
+Match.day.2.lowbest = Match.day.1.lowbest+91
+
+#Select the two matching modeled anoxic age profiles
+aa.first.lowbest = ar.low.best.bin.cumul[,Match.day.1.lowbest+1]
+aa.second.lowbest = ar.low.best.bin.cumul[,Match.day.2.lowbest+1]
+
+
+
+####################################Low temporal resolution, best case, log################################
+
+O2.Living.LowResbest <- O2.decay(Coef.mat, "Livingstone", 2020, "Low res best", ar.alpha)
+ar.low.best.living = as.data.frame(matrix(nrow=nrow(O2.Living.LowResbest), ncol = nday))
+ar.low.best.living[,1] = 12.3
+for(i in 2:ncol(ar.low.best.living)){
+  ar.low.best.living[,i] = 12.3 - O2.Living.LowResbest[,1]*(i-1)
+}
+ar.low.best.living[ar.low.best.living<0] = 0
+
+
+ar.low.best.bin.living <- ifelse(ar.low.best.living <= O2.threshold, 1, 0)
+ar.low.best.bin.living.cumul <- ar.low.best.bin.living
+for(j in 2:ncol(ar.low.best.bin.living.cumul)){
+  temp = ar.low.best.bin.living.cumul[,j-1]+ar.low.best.bin.living.cumul[,j]
+  temp = ifelse(temp > ar.low.best.bin.living.cumul[,j-1], temp, 0)
+  ar.low.best.bin.living.cumul[,j] = temp
+}
+# ar.low.best.bin.cumul = rbind(matrix(nrow=29,ncol=nday),ar.low.best.bin.cumul)
+# ar.low.best.bin.cumul[is.na(ar.low.best.bin.cumul)] = 0
+ar.low.best.bin.living.cumul = cbind(c(30:47), ar.low.best.bin.living.cumul)
+colnames(ar.low.best.bin.living.cumul)[1] = "Depth"
+
+colnames(ar.low.best.bin.living.cumul)[2:(nday+1)] = paste(seq(dbeg,dbeg+nday-1,1))
+
+ar.low.best.bin.living.cumul = as.data.frame(ar.low.best.bin.living.cumul)
+
+ar.low.best.bin.living.cumul.long = pivot_longer(ar.low.best.bin.living.cumul,
+                                          cols = 2:ncol(ar.low.best.bin.living.cumul),
+                                          names_to = "DOY", values_to = "HypoxAge")
+ar.low.best.bin.cumul.living.long = as.data.frame(ar.low.best.bin.living.cumul.long)
+
+# ggplot(ar.low.best.bin.living.cumul.long)+
+#   geom_raster(aes(x=as.numeric(DOY), y=Depth, fill=HypoxAge))+
+#   scale_y_reverse()+
+#    scale_fill_gradient(low="white", high="red")+
+#   ggtitle("2018")
+
+
+#Select the date matching chemistry observations
+#In 2020, Arendsee was sampled on 2020-05-26 (day 147) and 2020-08-25 (day 238)
+#Same object as High resolution YSI
+
+Match.temp.1.lowbest.living = ar.low.best.living
+for(i in 1:ncol(ar.low.best.living)){
+  Match.temp.1.lowbest.living[,i] = ar.low.best.living[,i] - Ar.first.profile[,2]
+}
+
+# Match.temp.1.low.absYSI.living = abs(Match.temp.1.lowYSI.living)
+Match.temp.1.lowbest.abs.living = (Match.temp.1.lowbest.living)^2
+Match.day.1.lowbest.living = which(colSums(Match.temp.1.lowbest.abs.living) == min(colSums(Match.temp.1.lowbest.abs.living)))
+
+Match.temp.2.lowbest.living = ar.low.best.living
+for(i in 1:ncol(ar.low.best.living)){
+  Match.temp.2.lowbest.living[,i] = ar.low.best.living[,i] - Ar.second.profile[,2]
+}
+
+Match.temp.2.lowbest.abs.living = (Match.temp.2.lowbest.living)^2
+Match.day.2.lowbest.living.modelled = which(colSums(Match.temp.2.lowbest.abs.living) == min(colSums(Match.temp.2.lowbest.abs.living)))
+min(colSums(Match.temp.2.lowbest.abs.living))
+
+#The lines in comments before are to match modeled data with the second dates
+#Here, we use the first profile as the starting date and use the real date of the second profile
+#which was 91 days after. Graphically, it doesn't make much difference
+#only a translation toward higher anoxic age values
+Match.day.2.lowbest.living = Match.day.1.lowbest.living+91
+
+#Select the two matching modeled anoxic age profiles
+aa.first.lowbest.living = ar.low.best.bin.living.cumul[,Match.day.1.lowbest.living+1]
+aa.second.lowbest.living = ar.low.best.bin.living.cumul[,Match.day.2.lowbest.living+1]
+
+
+
+
+
+aa.matrix.1 = cbind(aa.depth, 
+                    aa.highres.log=aa.first[c(1,11,16,17,18)], 
+                    aa.highres.living = aa.first.Living[c(1,11,16,17,18)], 
+                    aa.lowres.rinko.log = aa.first.low[c(1,11,16,17,18)], 
+                    aa.lowres.rinko.living = aa.first.low.living[c(1,11,16,17,18)], 
+                    aa.lowres.ysi.log = aa.first.lowYSI[c(1,11,16,17,18)], 
+                    aa.lowres.ysi.living = aa.first.lowYSI.living[c(1,11,16,17,18)], 
+                    aa.lowres.best.log = aa.first.lowbest[c(1,11,16,17,18)], 
+                    aa.lowres.best.living = aa.first.lowbest.living[c(1,11,16,17,18)], 
+                    CO2=ar.chem.1.co2[,2], CH4=ar.chem.1.ch4[,2],
+                    SRP=ar.chem.1.single$SRP, NH4=ar.chem.1.single$NH4_fia, DOC=ar.chem.1.single$DOC,
+                    SO4=ar.chem.1.single$SO4, Fe=ar.chem.1.single$Fe_d, S = ar.chem.1.single$S_d)
+aa.matrix.2 = cbind(aa.depth, 
+                    aa.highres.log=aa.second[c(1,11,16,17,18)], 
+                    aa.highres.living = aa.second.Living[c(1,11,16,17,18)], 
+                    aa.lowres.rinko.log = aa.second.low[c(1,11,16,17,18)],  
+                    aa.lowres.rinko.living = aa.second.low.living[c(1,11,16,17,18)],  
+                    aa.lowres.ysi.log = aa.second.lowYSI[c(1,11,16,17,18)], 
+                    aa.lowres.ysi.living = aa.second.lowYSI.living[c(1,11,16,17,18)],  
+                    aa.lowres.best.log = aa.second.lowbest[c(1,11,16,17,18)],  
+                    aa.lowres.best.living = aa.second.lowbest.living[c(1,11,16,17,18)],
+                    CO2=ar.chem.2.co2[,2], CH4=ar.chem.2.ch4[,2],
+                    SRP=ar.chem.2.single$SRP, NH4=ar.chem.2.single$NH4_fia, DOC=ar.chem.2.single$DOC,
+                    SO4=ar.chem.2.single$SO4, Fe=ar.chem.2.single$Fe_d, S = ar.chem.2.single$S_d)
+
+aa.matrix = rbind(aa.matrix.1, aa.matrix.2)
+aa.delta.matrix = aa.matrix.2
+aa.delta.matrix[,c(10:17)] = aa.matrix.2[,c(10:17)] - aa.matrix.1[,c(10:17)]
+
+#Plot some relationships and hope for the best
+par(mfrow=c(2,3))
+plot(CO2~aa.highres.log, data=aa.matrix, pch = 16, las = 1,
+     xlim = c(0,90), xlab = "Anoxic age (d)", col = "black")
+#Put in comments as graphically, they are practically the same
+# points(CO2~aa.highres.living, data=aa.matrix, pch = 15, las = 1,
+#        xlim = c(0,90), xlab = "Anoxic age (d)", col = "#73BAE6")
+# points(CO2~aa.lowres.rinko.log, data=aa.matrix, pch = 16, las = 1,
+#      xlim = c(0,90), xlab = "Anoxic age (d)", col = "#C7144C")
+# points(CO2~aa.lowres.rinko.living, data=aa.matrix, pch = 15, las = 1,
+#        xlim = c(0,90), xlab = "Anoxic age (d)", col = "#C7144C")
+# points(CO2~aa.lowres.ysi.log, data=aa.matrix, pch = 16, las = 1,
+#      xlim = c(0,90), xlab = "Anoxic age (d)", col = "#33a02c")
+# points(CO2~aa.lowres.ysi.living, data=aa.matrix, pch = 15, las = 1,
+#        xlim = c(0,90), xlab = "Anoxic age (d)", col = "#33a02c")
+# points(CO2~aa.lowres.best.log, data=aa.matrix, pch = 16, las = 1,
+#      xlim = c(0,90), xlab = "Anoxic age (d)", col = "#FFD700")
+# points(CO2~aa.lowres.best.living, data=aa.matrix, pch = 15, las = 1,
+#        xlim = c(0,90), xlab = "Anoxic age (d)", col = "#FFD700")
+
+plot(CH4~aa.highres.log, data=aa.matrix, pch = 16, las = 1)
+plot(SRP~aa.highres.log, data=aa.matrix, pch = 16, las = 1)
+plot(NH4~aa.highres.log, data=aa.matrix, pch = 16, las = 1)
+plot(S~aa.highres.log, data=aa.matrix, pch = 16, las = 1)
+plot(Fe~aa.highres.log, data=aa.matrix, pch = 16, las = 1)
+
+
+par(mfrow=c(2,3))
+plot(CO2~aa.highres.log, data=aa.delta.matrix, pch = 16, las = 1,
+     xlim = c(0,90), xlab = "Anoxic age (d)", ylab = "Delta CO2", col = "black")
+plot(CH4~aa.highres.log, data=aa.delta.matrix, 
+     xlab = "Anoxic age (d)", ylab = "Delta CH4", pch = 16, las = 1)
+plot(SRP~aa.highres.log, data=aa.delta.matrix,
+     xlab = "Anoxic age (d)", ylab = "Delta SRP", pch = 16, las = 1)
+plot(NH4~aa.highres.log, data=aa.delta.matrix,
+     xlab = "Anoxic age (d)", ylab = "Delta NH4", pch = 16, las = 1)
+plot(S~aa.highres.log, data=aa.delta.matrix, 
+     xlab = "Anoxic age (d)", ylab = "Delta S", pch = 16, las = 1)
+plot(Fe~aa.highres.log, data=aa.delta.matrix,
+     xlab = "Anoxic age (d)", ylab = "Delta Fe", pch = 16, las = 1)
+
+
+
+
+#####
 #Get the coefficients for Jv and Ja for each years
 Ar.Jv.2017 = Ar.Living.2017$coefficients[1,1]
 Ar.Ja.2017 = Ar.Living.2017$coefficients[2,1]
