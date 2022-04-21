@@ -5,6 +5,7 @@ library(segmented)
 library(tidyr)
 library(caret)
 setwd("D:/Postdoc/Allemagne/Github/AnoxicAge")
+load("D:/Postdoc/Allemagne/Github/AnoxicAge/Data/Mendota/Mendota.RData")
 source("./Scripts/O2_DecayRate.R")
 
 data = read.csv("./Data/Mendota/Mendota.csv")
@@ -492,9 +493,15 @@ min(colSums(Match.temp.3.2020.Exp.sqr)) #4.872196
 
 ################################Transform O2 profiles into anoxic age##################
 #2018
-O2.threshold = 2
+
+O2.threshold = c(1,2)
+O2.2018.Living.bin.cumul.list=list()
+O2.2018.Log.bin.cumul.list=list()
+O2.2018.Exp.bin.cumul.list=list()
+for(i in 1:length(O2.threshold))
+  {
 #Livingstone model
-O2.2018.Living.bin <- ifelse(O2.2018.Living <= O2.threshold, 1, 0)
+O2.2018.Living.bin <- ifelse(O2.2018.Living <= O2.threshold[i], 1, 0)
 O2.2018.Living.bin.cumul <- O2.2018.Living.bin
 for(j in 2:ncol(O2.2018.Living.bin.cumul)){
   temp = O2.2018.Living.bin.cumul[,j-1]+O2.2018.Living.bin.cumul[,j]
@@ -510,10 +517,10 @@ colnames(O2.2018.Living.bin.cumul)[1] = "Depth"
 colnames(O2.2018.Living.bin.cumul)[2:(nday+1)] = paste(seq(119,119+nday-1,1))
 
 #Transform into dataframe
-O2.2018.Living.bin.cumul = as.data.frame(O2.2018.Living.bin.cumul)
+O2.2018.Living.bin.cumul.list[[i]] = as.data.frame(O2.2018.Living.bin.cumul)
 
 #Log model
-O2.2018.Log.bin <- ifelse(O2.2018.Log <= O2.threshold, 1, 0)
+O2.2018.Log.bin <- ifelse(O2.2018.Log <= O2.threshold[i], 1, 0)
 O2.2018.Log.bin.cumul <- O2.2018.Log.bin
 for(j in 2:ncol(O2.2018.Log.bin.cumul)){
   temp = O2.2018.Log.bin.cumul[,j-1]+O2.2018.Log.bin.cumul[,j]
@@ -527,10 +534,10 @@ colnames(O2.2018.Log.bin.cumul)[1] = "Depth"
 colnames(O2.2018.Log.bin.cumul)[2:(nday+1)] = paste(seq(119,119+nday-1,1))
 
 #Transform into dataframe
-O2.2018.Log.bin.cumul = as.data.frame(O2.2018.Log.bin.cumul)
+O2.2018.Log.bin.cumul.list[[i]] = as.data.frame(O2.2018.Log.bin.cumul)
 
 #Exponential plateau model
-O2.2018.Exp.bin <- ifelse(O2.2018.Exp <= O2.threshold, 1, 0)
+O2.2018.Exp.bin <- ifelse(O2.2018.Exp <= O2.threshold[i], 1, 0)
 O2.2018.Exp.bin.cumul <- O2.2018.Exp.bin
 for(j in 2:ncol(O2.2018.Exp.bin.cumul)){
   temp = O2.2018.Exp.bin.cumul[,j-1]+O2.2018.Exp.bin.cumul[,j]
@@ -544,22 +551,28 @@ colnames(O2.2018.Exp.bin.cumul)[1] = "Depth"
 colnames(O2.2018.Exp.bin.cumul)[2:(nday+1)] = paste(seq(119,119+nday-1,1))
 
 #Transform into dataframe
-O2.2018.Exp.bin.cumul = as.data.frame(O2.2018.Exp.bin.cumul)
-
-
+O2.2018.Exp.bin.cumul.list[[i]] = as.data.frame(O2.2018.Exp.bin.cumul)
+}
+names(O2.2018.Exp.bin.cumul.list) <- names(O2.2018.Log.bin.cumul.list) <- names(O2.2018.Living.bin.cumul.list) <- paste0("Threshold",O2.threshold)
 ##################Make dataframe with anoxic days and corresponding FDOM values###########
 
 #Extract DOY from field database
 DOY.data.2018 <- unique(data.2018.cut$DOY)
 
-aa.DOY.Living = cbind(Depth = O2.2018.Living.bin.cumul[,1], alpha=alpha.2018,
-                      O2.2018.Living.bin.cumul[,match(DOY.data.2018, colnames(O2.2018.Living.bin.cumul))])
+FDOM.living.2018.list = list()
+FDOM.log.2018.list = list()
+FDOM.exp.2018.list = list()
 
-aa.DOY.Log = cbind(Depth = O2.2018.Log.bin.cumul[,1], alpha=alpha.2018,
-                      O2.2018.Log.bin.cumul[,match(DOY.data.2018, colnames(O2.2018.Log.bin.cumul))])
+for(j in 1:length(O2.2018.Exp.bin.cumul.list))
+{
+  aa.DOY.Living = cbind(Depth = O2.2018.Living.bin.cumul.list[[j]][,1], alpha=alpha.2018,
+                      O2.2018.Living.bin.cumul.list[[j]][,match(DOY.data.2018, colnames(O2.2018.Living.bin.cumul.list[[j]]))])
 
-aa.DOY.Exp = cbind(Depth = O2.2018.Exp.bin.cumul[,1], alpha=alpha.2018,
-                      O2.2018.Exp.bin.cumul[,match(DOY.data.2018, colnames(O2.2018.Exp.bin.cumul))])
+aa.DOY.Log = cbind(Depth = O2.2018.Log.bin.cumul.list[[j]][,1], alpha=alpha.2018,
+                      O2.2018.Log.bin.cumul.list[[j]][,match(DOY.data.2018, colnames(O2.2018.Log.bin.cumul.list[[j]]))])
+
+aa.DOY.Exp = cbind(Depth = O2.2018.Exp.bin.cumul.list[[j]][,1], alpha=alpha.2018,
+                      O2.2018.Exp.bin.cumul.list[[j]][,match(DOY.data.2018, colnames(O2.2018.Exp.bin.cumul.list[[j]]))])
 
 #Change to long format
 aa.DOY.Living.long = pivot_longer(aa.DOY.Living, cols = c(3:18),
@@ -589,11 +602,21 @@ aa.DOY.Log.long$Fdom = FDOM.all
 aa.DOY.Exp.long = aa.DOY.Exp.long[order(aa.DOY.Exp.long$DOY, decreasing = F),]
 aa.DOY.Exp.long$Fdom = FDOM.all
 
-aa.DOY.Living.long = as.data.frame(aa.DOY.Living.long)
+FDOM.living.2018.list[[j]] = as.data.frame(aa.DOY.Living.long)
+FDOM.log.2018.list[[j]] = as.data.frame(aa.DOY.Log.long)
+FDOM.exp.2018.list[[j]] = as.data.frame(aa.DOY.Exp.long)
+}
+
+
 
 #Test the regressions
 #Livingstone model
-Anoxic.lm.Living = lm(Fdom ~ AnoxicAge, data = aa.DOY.Living.long[aa.DOY.Living.long$AnoxicAge!=0,])
+
+Anoxic.lm.Living.list = list()
+for(i in 1:length(FDOM.living.2018.list)){
+Anoxic.lm.Living.list[[i]] = lm(Fdom ~ AnoxicAge, data = FDOM.living.2018.list[[i]][FDOM.living.2018.list[[i]]$AnoxicAge!=0,])
+}
+
 Multiple.lm.Living = lm(Fdom ~ AnoxicAge + Depth, data = aa.DOY.Living.long[aa.DOY.Living.long$AnoxicAge!=0,])
 Anoxic.R2.living = round(summary(Anoxic.lm.Living)$r.squared,3)
 Multiple.lm.Living.a = lm(Fdom ~ AnoxicAge + Depth+ alpha, data = aa.DOY.Living.long[aa.DOY.Living.long$AnoxicAge!=0,])
@@ -604,13 +627,22 @@ Multiple.lm.Living.f = lm(aa.DOY.Living.long[aa.DOY.Living.long$AnoxicAge!=0,"Fd
 
 
 #Log-linear model
-Anoxic.lm.Log = lm(Fdom ~ AnoxicAge, data = aa.DOY.Log.long[aa.DOY.Log.long$AnoxicAge!=0,])
+Anoxic.lm.Log.list = list()
+for(i in 1:length(FDOM.log.2018.list)){
+  Anoxic.lm.Log.list[[i]] = lm(Fdom ~ AnoxicAge, data = FDOM.log.2018.list[[i]][FDOM.log.2018.list[[i]]$AnoxicAge!=0,])
+}
+
 Multiple.lm.Log = lm(Fdom ~ AnoxicAge + Depth, data = aa.DOY.Log.long[aa.DOY.Log.long$AnoxicAge!=0,])
 Anoxic.R2.Log = round(summary(Anoxic.lm.Log)$r.squared,3)
 Multiple.lm.Log.a = lm(Fdom ~ AnoxicAge + Depth + alpha, data = aa.DOY.Log.long[aa.DOY.Log.long$AnoxicAge!=0,])
 
 #Exponential plateau
-Anoxic.lm.Exp = lm(Fdom ~ AnoxicAge, data = aa.DOY.Exp.long[aa.DOY.Exp.long$AnoxicAge!=0,])
+Anoxic.lm.Exp.list = list()
+for(i in 1:length(FDOM.exp.2018.list)){
+  Anoxic.lm.Exp.list[[i]] = lm(Fdom ~ AnoxicAge, data = FDOM.exp.2018.list[[i]][FDOM.exp.2018.list[[i]]$AnoxicAge!=0,])
+}
+
+
 Multiple.lm.Exp = lm(Fdom ~ AnoxicAge + Depth, data = aa.DOY.Exp.long[aa.DOY.Exp.long$AnoxicAge!=0,])
 Anoxic.R2.Exp = round(summary(Anoxic.lm.Exp)$r.squared,3)
 Multiple.lm.Exp.a = lm(Fdom ~ AnoxicAge + Depth + alpha, data = aa.DOY.Exp.long[aa.DOY.Exp.long$AnoxicAge!=0,])
@@ -635,7 +667,6 @@ summary(Depth.lm.Living)
 summary(Multiple.lm.Living)
 summary(Multiple.lm.Log)
 summary(Multiple.lm.Exp)
-
 
 
 #plot the results
@@ -716,7 +747,13 @@ dev.off()
 
 #Repeat all steps for 2020
 #Livingstone model
-O2.2020.Living.bin <- ifelse(O2.2020.Living <= O2.threshold, 1, 0)
+O2.2020.Living.bin.cumul.list=list()
+O2.2020.Log.bin.cumul.list=list()
+O2.2020.Exp.bin.cumul.list=list()
+
+for(i in 1:length(O2.threshold))
+{
+O2.2020.Living.bin <- ifelse(O2.2020.Living <= O2.threshold[i], 1, 0)
 O2.2020.Living.bin.cumul <- O2.2020.Living.bin
 for(j in 2:ncol(O2.2020.Living.bin.cumul)){
   temp = O2.2020.Living.bin.cumul[,j-1]+O2.2020.Living.bin.cumul[,j]
@@ -732,10 +769,10 @@ colnames(O2.2020.Living.bin.cumul)[1] = "Depth"
 colnames(O2.2020.Living.bin.cumul)[2:(nday+1)] = paste(seq(124,124+nday-1,1))
 
 #Transform into dataframe
-O2.2020.Living.bin.cumul = as.data.frame(O2.2020.Living.bin.cumul)
+O2.2020.Living.bin.cumul.list[[i]] = as.data.frame(O2.2020.Living.bin.cumul)
 
 #Log model
-O2.2020.Log.bin <- ifelse(O2.2020.Log <= O2.threshold, 1, 0)
+O2.2020.Log.bin <- ifelse(O2.2020.Log <= O2.threshold[i], 1, 0)
 O2.2020.Log.bin.cumul <- O2.2020.Log.bin
 for(j in 2:ncol(O2.2020.Log.bin.cumul)){
   temp = O2.2020.Log.bin.cumul[,j-1]+O2.2020.Log.bin.cumul[,j]
@@ -749,10 +786,10 @@ colnames(O2.2020.Log.bin.cumul)[1] = "Depth"
 colnames(O2.2020.Log.bin.cumul)[2:(nday+1)] = paste(seq(124,124+nday-1,1))
 
 #Transform into dataframe
-O2.2020.Log.bin.cumul = as.data.frame(O2.2020.Log.bin.cumul)
+O2.2020.Log.bin.cumul.list[[i]] = as.data.frame(O2.2020.Log.bin.cumul)
 
 #Exponential plateau model
-O2.2020.Exp.bin <- ifelse(O2.2020.Exp <= O2.threshold, 1, 0)
+O2.2020.Exp.bin <- ifelse(O2.2020.Exp <= O2.threshold[i], 1, 0)
 O2.2020.Exp.bin.cumul <- O2.2020.Exp.bin
 for(j in 2:ncol(O2.2020.Exp.bin.cumul)){
   temp = O2.2020.Exp.bin.cumul[,j-1]+O2.2020.Exp.bin.cumul[,j]
@@ -766,24 +803,31 @@ colnames(O2.2020.Exp.bin.cumul)[1] = "Depth"
 colnames(O2.2020.Exp.bin.cumul)[2:(nday+1)] = paste(seq(124,124+nday-1,1))
 
 #Transform into dataframe
-O2.2020.Exp.bin.cumul = as.data.frame(O2.2020.Exp.bin.cumul)
-
+O2.2020.Exp.bin.cumul.list[[i]] = as.data.frame(O2.2020.Exp.bin.cumul)
+}
 
 ##################Make dataframe with anoxic days and corresponding FDOM values###########
  
 #Extract DOY from field database
-data.2020.cut <- data.2020.cut[c(1:171),]
+data.2020.cut <- data.2020.cut[c(1:165),]
 data.2020.cut <- data.2020.cut[data.2020.cut$depth !=23.5,]
 DOY.data.2020 <- unique(data.2020.cut$DOY)
 
-aa.DOY.Living.2020 = cbind(Depth = O2.2020.Living.bin.cumul[,1], alpha = alpha.2020, 
-                      O2.2020.Living.bin.cumul[,match(DOY.data.2020, colnames(O2.2020.Living.bin.cumul))])
 
-aa.DOY.Log.2020 = cbind(Depth = O2.2020.Log.bin.cumul[,1], alpha = alpha.2020, 
-                   O2.2020.Log.bin.cumul[,match(DOY.data.2020, colnames(O2.2020.Log.bin.cumul))])
+FDOM.living.2020.list = list()
+FDOM.log.2020.list = list()
+FDOM.exp.2020.list = list()
 
-aa.DOY.Exp.2020 = cbind(Depth = O2.2020.Exp.bin.cumul[,1], alpha = alpha.2020, 
-                   O2.2020.Exp.bin.cumul[,match(DOY.data.2020, colnames(O2.2020.Exp.bin.cumul))])
+for(j in 1:length(O2.2020.Exp.bin.cumul.list))
+{
+aa.DOY.Living.2020 = cbind(Depth = O2.2020.Living.bin.cumul.list[[j]][,1], alpha = alpha.2020, 
+                           O2.2020.Living.bin.cumul.list[[j]][,match(DOY.data.2020, colnames(O2.2020.Living.bin.cumul.list[[j]]))])
+
+aa.DOY.Log.2020 = cbind(Depth = O2.2020.Log.bin.cumul.list[[j]][,1], alpha = alpha.2020, 
+                   O2.2020.Log.bin.cumul.list[[j]][,match(DOY.data.2020, colnames(O2.2020.Log.bin.cumul.list[[j]]))])
+
+aa.DOY.Exp.2020 = cbind(Depth = O2.2020.Exp.bin.cumul.list[[j]][,1], alpha = alpha.2020, 
+                   O2.2020.Exp.bin.cumul.list[[j]][,match(DOY.data.2020, colnames(O2.2020.Exp.bin.cumul.list[[j]]))])
 
 #Change to long format
 aa.DOY.Living.2020.long = pivot_longer(aa.DOY.Living.2020, cols = c(3:17),
@@ -813,6 +857,10 @@ aa.DOY.Log.2020.long$Fdom = FDOM.all
 aa.DOY.Exp.2020.long = aa.DOY.Exp.2020.long[order(aa.DOY.Exp.2020.long$DOY, decreasing = F),]
 aa.DOY.Exp.2020.long$Fdom = FDOM.all
 
+FDOM.living.2020.list[[j]] = aa.DOY.Living.2020.long
+FDOM.log.2020.list[[j]] = aa.DOY.Log.2020.long
+FDOM.exp.2020.list[[j]] = aa.DOY.Exp.2020.long
+}
 
 #Test the regressions
 #Livingstone model
@@ -853,9 +901,131 @@ summary(Multiple.lm.Living.2020)
 summary(Multiple.lm.Log.2020)
 summary(Multiple.lm.Exp.2020)
 
+
+
+
+
+{
+  pdf("./Data/Mendota/Output/Fdom-aa.2018-2020.pdf", width = 7, height = 3.5)
+  # png("./Data/Mendota/Output/Fdom-aa.2018-2020.png", width = 7, height = 3.5, units = "in", res=300)
+  par(mfrow=c(2,3))
+  par(mar=c(4,5,1,1.5)+.1)
+  plot(FDOM.exp.2018.list[[1]]$Fdom ~ FDOM.exp.2018.list[[1]]$DOY,
+       xlab = "Time (DOY)",
+       ylab = expression(F[365/480]~(QSE)),
+       ylim = c(13,17),
+       cex = 1.8,
+       las = 1,cex.axis = 1.2, cex.lab=1.2)
+  mtext("a", side = 3, at = 115)
+  plot(FDOM.exp.2018.list[[1]]$Fdom[FDOM.exp.2018.list[[2]]$AnoxicAge!=0] ~ FDOM.exp.2018.list[[1]]$AnoxicAge[FDOM.exp.2018.list[[2]]$AnoxicAge!=0],
+       xlab = "Anoxic age (days)",
+       # ylab = expression(F[365/480]~(QSE)),
+       ylim = c(13,17),
+       ylab = "",
+       yaxt = "n",
+       cex = 1.8,
+       las = 1,cex.axis = 1.2, cex.lab=1.2)
+  mtext("b", side = 3, at = -5)
+  boxplot(FDOM.exp.2018.list[[2]]$Fdom[FDOM.exp.2018.list[[2]]$AnoxicAge==0] ~ FDOM.exp.2018.list[[2]]$AnoxicAge[FDOM.exp.2018.list[[2]]$AnoxicAge==0],
+       xlab = "Anoxic age (days, threshold = 2)",
+       # ylab = expression(F[365/480]~(QSE)),
+       ylim = c(13,17),
+       ylab = "",
+       yaxt = "n",
+       las = 1,cex.axis = 1.2, cex.lab=1.2)
+  
+  plot(FDOM.exp.2020.list[[1]]$Fdom ~ FDOM.exp.2020.list[[1]]$DOY,
+       xlab = "Time (DOY)",
+       ylab = expression(F[365/480]~(QSE)),
+       ylim = c(10,14),
+       cex = 1.8,
+       las = 1,cex.axis = 1.2, cex.lab=1.2)
+  mtext("c", side = 3, at = 135)
+  plot(FDOM.exp.2020.list[[1]]$Fdom[FDOM.exp.2020.list[[2]]$AnoxicAge!=0] ~ FDOM.exp.2020.list[[1]]$AnoxicAge[FDOM.exp.2020.list[[2]]$AnoxicAge!=0],
+       xlab = "Anoxic age (days, threshold = 1)",
+       # ylab = expression(F[365/480]~(QSE)),
+       ylim = c(10,14),
+       ylab = "",
+       yaxt = "n",
+       cex = 1.8,
+       las = 1,cex.axis = 1.2, cex.lab=1.2)
+  mtext("d", side = 3, at = -5)
+  boxplot(FDOM.exp.2020.list[[2]]$Fdom[FDOM.exp.2020.list[[2]]$AnoxicAge==0] ~ FDOM.exp.2020.list[[2]]$AnoxicAge[FDOM.exp.2020.list[[2]]$AnoxicAge==0],
+       xlab = "Anoxic age (days, threshold = 2)",
+       ylim = c(10,14),
+       # ylab = expression(F[365/480]~(QSE)),
+       ylab = "",
+       yaxt = "n",
+       las = 1,cex.axis = 1.2, cex.lab=1.2)
+  mtext("f", side = 3, at = -5)
+  dev.off()
+}
+#
+
+FDOM.AA.2018.1.lm <- lm(FDOM.exp.2018.list[[1]]$Fdom ~ FDOM.exp.2018.list[[1]]$AnoxicAge)
+FDOM.DOY.2018.1.lm <- lm(FDOM.exp.2018.list[[1]]$Fdom ~ as.numeric(FDOM.exp.2018.list[[1]]$DOY))
+FDOM.AA.2018.2.lm <- lm(FDOM.exp.2018.list[[2]]$Fdom ~ FDOM.exp.2018.list[[2]]$AnoxicAge)
+
+FDOM.AA.2018.NoOxic1.lm <- lm(FDOM.exp.2018.list[[1]]$Fdom[FDOM.exp.2018.list[[1]]$AnoxicAge!=0] ~ FDOM.exp.2018.list[[1]]$AnoxicAge[FDOM.exp.2018.list[[1]]$AnoxicAge!=0])
+FDOM.DOY.2018.NoOxic1.lm <- lm(FDOM.exp.2018.list[[1]]$Fdom[FDOM.exp.2018.list[[1]]$AnoxicAge!=0] ~ as.numeric(FDOM.exp.2018.list[[1]]$DOY[FDOM.exp.2018.list[[1]]$AnoxicAge!=0]))
+
+FDOM.AA.2018.NoOxic2.lm <- lm(FDOM.exp.2018.list[[2]]$Fdom[FDOM.exp.2018.list[[2]]$AnoxicAge!=0] ~ FDOM.exp.2018.list[[2]]$AnoxicAge[FDOM.exp.2018.list[[2]]$AnoxicAge!=0])
+FDOM.DOY.2018.NoOxic2.lm <- lm(FDOM.exp.2018.list[[2]]$Fdom[FDOM.exp.2018.list[[2]]$AnoxicAge!=0] ~ as.numeric(FDOM.exp.2018.list[[2]]$DOY[FDOM.exp.2018.list[[2]]$AnoxicAge!=0]))
+
+
+FDOM.AA.2020.1.lm <- lm(FDOM.exp.2020.list[[1]]$Fdom ~ FDOM.exp.2020.list[[1]]$AnoxicAge)
+FDOM.DOY.2020.1.lm <- lm(FDOM.exp.2020.list[[1]]$Fdom ~ as.numeric(FDOM.exp.2020.list[[1]]$DOY))
+FDOM.AA.2020.2.lm <- lm(FDOM.exp.2020.list[[2]]$Fdom ~ FDOM.exp.2020.list[[2]]$AnoxicAge)
+
+FDOM.AA.2020.NoOxic1.lm <- lm(FDOM.exp.2020.list[[1]]$Fdom[FDOM.exp.2020.list[[1]]$AnoxicAge!=0] ~ FDOM.exp.2020.list[[1]]$AnoxicAge[FDOM.exp.2020.list[[1]]$AnoxicAge!=0])
+FDOM.DOY.2020.NoOxic1.lm <- lm(FDOM.exp.2020.list[[1]]$Fdom[FDOM.exp.2020.list[[1]]$AnoxicAge!=0] ~ as.numeric(FDOM.exp.2020.list[[1]]$DOY[FDOM.exp.2020.list[[1]]$AnoxicAge!=0]))
+
+FDOM.AA.2020.NoOxic2.lm <- lm(FDOM.exp.2020.list[[2]]$Fdom[FDOM.exp.2020.list[[2]]$AnoxicAge!=0] ~ FDOM.exp.2020.list[[2]]$AnoxicAge[FDOM.exp.2020.list[[2]]$AnoxicAge!=0])
+FDOM.DOY.2020.NoOxic2.lm <- lm(FDOM.exp.2020.list[[2]]$Fdom[FDOM.exp.2020.list[[2]]$AnoxicAge!=0] ~ as.numeric(FDOM.exp.2020.list[[2]]$DOY[FDOM.exp.2020.list[[2]]$AnoxicAge!=0]))
+
+#Summaries
+#2018
+summary(FDOM.AA.2018.1.lm) #R2 = 0.59
+summary(FDOM.DOY.2018.1.lm) #R2 = 0.84
+summary(FDOM.AA.2018.2.lm) #R2 = 0.63
+
+summary(FDOM.AA.2018.NoOxic1.lm) #R2 = 0.54
+summary(FDOM.DOY.2018.NoOxic1.lm) #R2 = 0.28
+
+summary(FDOM.AA.2018.NoOxic2.lm) #R2 = 0.56
+summary(FDOM.DOY.2018.NoOxic2.lm) #R2 = 0.32
+
+#2020
+summary(FDOM.AA.2020.1.lm) #R2 = 0.72
+summary(FDOM.DOY.2020.1.lm) #R2 = 0.80
+summary(FDOM.AA.2020.2.lm) #R2 = 0.74
+
+summary(FDOM.AA.2020.NoOxic1.lm) #R2 = 0.70
+summary(FDOM.DOY.2020.NoOxic1.lm) #R2 = 0.35
+
+summary(FDOM.AA.2020.NoOxic2.lm) #R2 = 0.66
+summary(FDOM.DOY.2020.NoOxic2.lm) #R2 = 0.36
+
+
+
+
+
+
+#
+
+
+
+
+
+
+
+
+
+
+
 #plot the results
 {
-  png("./Output/Mendota.Fdom-aa.2020.png", width = 8, height = 6, units = "in", res=300)
+  png("./Output/Mendota.Fdom-aa.2020.png", width = 6, height = 7, units = "in", res=300)
   par(mfrow=c(2,2))
   # par(mfrow=c(1,3))
   # plot(Fdom ~ jitter(AnoxicAge), data = aa.DOY.Living.long[aa.DOY.Living.long$AnoxicAge==0,],
@@ -1008,7 +1178,7 @@ print(RMSE.2020/mean(RF.df.2020[test.2020,"Fdom"], na.omit=T))
 
 
 #Export results
-png("./Output/FDOM.Mendota.Rel.png", units = "in", res=450, width = 9, height = 6.4)
+png("./Data/Mendota/Output/FDOM.Mendota.Rel.png", units = "in", res=450, width = 9, height = 6.4)
 par(mfrow=c(2,3))
 par(mar=c(4,5,1,1)+.1)
 plot(Fdom ~ as.numeric(DOY), data = aa.DOY.Exp.long,
@@ -1054,11 +1224,11 @@ plot(Fdom ~ AnoxicAge, data = aa.DOY.Exp.2020.long,
 mtext("f", side = 3, at = -5)
 dev.off()
 
-png("./Output/FDOM.RF.2018.png")
+png("./Data/Mendota/Output/FDOM.RF.2018.png")
 plot(varImp(rf_gridsearch), main = "",
      cex = 1.5)
 dev.off()
-png("./Output/FDOM.RF.2020.png")
+png("./Data/Mendota/Output/FDOM.RF.2020.png")
 plot(varImp(rf_gridsearch_2020), main = "",
      cex = 1.5)
 dev.off()

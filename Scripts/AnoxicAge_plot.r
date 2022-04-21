@@ -44,7 +44,7 @@ library(readxl)
 #thresh.ox tox <- c(0.3)#mg/L entsprich 9.375 uM O2
 
 #imporat data
-rich_import <- read.csv("./Output/YSI.aa.2021.csv", fileEncoding = "UTF-8") 
+rich_import <- read.csv("./Output/YSI.aa.2017.csv", fileEncoding = "UTF-8") 
 rich_import = t(rich_import)
 
 #calculate anoxic age
@@ -65,7 +65,7 @@ aa.coerced <- rbind(
   aa.coerced,data.frame(
     diy=seq(1:max(depth_series[,2]))+startdate_doy,
     anox.age=depth_series[,1],
-    lake="Arendsee2021",
+    lake="Arendsee2017",
     depth.x=dptt[m]+29))
 }
 aa.coerced<-aa.coerced%>%filter(lake!=0)
@@ -77,14 +77,14 @@ aa.coerced<-aa.coerced%>%filter(lake!=0)
 grids<-7 #usual grid size is 1 (1 day and 0.1m), multiply to make grid broader
 grids2<-5 #
 
-holom<- data.frame(diy=c(80,343), #DIYs of circulation events
+holom<- data.frame(diy=c(102,361), #DIYs of circulation events
                    ys=-35,                       # position of "full circulation" text
                    mixi="full circulation", 
                    ymins=c(-47.5), #can be different values if different lakes are displayed
-                   lake=c("Arendsee2021")) #some adjustements would be necessary if you wish to change that, or add anther year
+                   lake=c("Arendsee2017")) #some adjustements would be necessary if you wish to change that, or add anther year
 monthss<- data.frame(diy=c(seq(from=15,to=365,by=30)),
                      mons=c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct", "Nov", "Dec"),
-                     lake="Arendsee2021") #Displayed only in the last row, so "lake" here would be only the lowermost panel
+                     lake="Arendsee2017") #Displayed only in the last row, so "lake" here would be only the lowermost panel
 #PLOT
 
 p2 <-ggplot(data=aa.coerced)+
@@ -116,4 +116,4 @@ p2 <-ggplot(data=aa.coerced)+
 
 p2
 
-ggsave("./Output/AnoxicAgeGrid_2021.jpg", p2, device = "jpeg")
+ggsave("./Output/AnoxicAgeGrid_2017.jpg", p2, device = "jpeg")
