@@ -3,7 +3,7 @@
 ##############################################################################
 library(segmented)
 library(tidyr)
-library(caret)
+# library(caret)
 setwd("D:/Postdoc/Allemagne/Github/AnoxicAge")
 load("D:/Postdoc/Allemagne/Github/AnoxicAge/Data/Mendota/Mendota.RData")
 source("./Scripts/O2_DecayRate.R")
@@ -110,19 +110,23 @@ dev.off()
 
 
 ##########################Extract Jz for each depths and each year######################
-getwd()
+
 #read Mendota alpha values
 alpha = read.csv("./Data/Mendota/Mendota.alpha.csv")
 
 #Always take the first slope for 2018 and 2020
 Jz.2018 = vector(length=length(Jz.list.2018)) 
+Jz.2018.err = Jz.2018
 for(i in 1:length(Jz.2018)){
   Jz.2018[i] = Jz.list.2018[[i]]$coefficients[2]*-1
+  Jz.2018.err[i] = summary(Jz.list.2018[[i]])$coef[2,2]
 }
 
 Jz.2020 = vector(length=length(Jz.list.2020)) 
+Jz.2020.err = Jz.2020
 for(i in 1:length(Jz.2020)){
   Jz.2020[i] = Jz.list.2020[[i]]$coefficients[2]*-1
+  Jz.2020.err[i] = summary(Jz.list.2020[[i]])$coef[2,2]
 }
 
 alpha.2018 = alpha[alpha$Depth > 9 & alpha$Depth < 23.5, 2]
@@ -336,7 +340,7 @@ for(i in 1:ncol(O2.2018.Exp)){
 
 Match.temp.3.Exp.sqr = (Match.temp.3.Exp)^2
 Match.day.3.Exp = which(colSums(Match.temp.3.Exp.sqr) == min(colSums(Match.temp.3.Exp.sqr)))
-min(colSums(Match.temp.3.Exp.sqr)) #0.88079514
+min(colSums(Match.temp.3.Exp.sqr)) #0.8079514
 
 ######################################Repeat for 2020#########################
 #Coefficients needed to model O2 decay
@@ -618,12 +622,8 @@ Anoxic.lm.Living.list[[i]] = lm(Fdom ~ AnoxicAge, data = FDOM.living.2018.list[[
 }
 
 Multiple.lm.Living = lm(Fdom ~ AnoxicAge + Depth, data = aa.DOY.Living.long[aa.DOY.Living.long$AnoxicAge!=0,])
-Anoxic.R2.living = round(summary(Anoxic.lm.Living)$r.squared,3)
+Anoxic.R2.living = round(summary(Anoxic.lm.Living.list[[2]])$r.squared,3)
 Multiple.lm.Living.a = lm(Fdom ~ AnoxicAge + Depth+ alpha, data = aa.DOY.Living.long[aa.DOY.Living.long$AnoxicAge!=0,])
-Multiple.lm.Living.f = lm(aa.DOY.Living.long[aa.DOY.Living.long$AnoxicAge!=0,"Fdom"]~ 
-                            aa.DOY.Living.long[aa.DOY.Living.long$AnoxicAge!=0,"AnoxicAge"] +
-                            aa.DOY.Living.long[aa.DOY.Living.long$AnoxicAge!=0,"Depth"]+
-                            aa.DOY.Living.long[c(1:14),"Fdom"],)
 
 
 #Log-linear model
@@ -633,7 +633,7 @@ for(i in 1:length(FDOM.log.2018.list)){
 }
 
 Multiple.lm.Log = lm(Fdom ~ AnoxicAge + Depth, data = aa.DOY.Log.long[aa.DOY.Log.long$AnoxicAge!=0,])
-Anoxic.R2.Log = round(summary(Anoxic.lm.Log)$r.squared,3)
+Anoxic.R2.Log = round(summary(Anoxic.lm.Log.list[[2]])$r.squared,3)
 Multiple.lm.Log.a = lm(Fdom ~ AnoxicAge + Depth + alpha, data = aa.DOY.Log.long[aa.DOY.Log.long$AnoxicAge!=0,])
 
 #Exponential plateau
@@ -644,7 +644,7 @@ for(i in 1:length(FDOM.exp.2018.list)){
 
 
 Multiple.lm.Exp = lm(Fdom ~ AnoxicAge + Depth, data = aa.DOY.Exp.long[aa.DOY.Exp.long$AnoxicAge!=0,])
-Anoxic.R2.Exp = round(summary(Anoxic.lm.Exp)$r.squared,3)
+Anoxic.R2.Exp = round(summary(Anoxic.lm.Exp.list[[2]])$r.squared,3)
 Multiple.lm.Exp.a = lm(Fdom ~ AnoxicAge + Depth + alpha, data = aa.DOY.Exp.long[aa.DOY.Exp.long$AnoxicAge!=0,])
 
 #Depth
@@ -658,91 +658,91 @@ alpha.lm.Living = lm(Fdom ~ alpha, data = aa.DOY.Living.long[aa.DOY.Living.long$
 
 #All the summaries together
 #Anoxic age
-summary(Anoxic.lm.Living)
-summary(Anoxic.lm.Log)
-summary(Anoxic.lm.Exp)
+summary(Anoxic.lm.Living.list[[2]]) #0.50
+summary(Anoxic.lm.Log.list[[2]]) #0.54
+summary(Anoxic.lm.Exp.list[[2]]) #0.56
 #Depth
-summary(Depth.lm.Living)
+summary(Depth.lm.Living) #0.33
 #Anoxic age + depth
-summary(Multiple.lm.Living)
-summary(Multiple.lm.Log)
-summary(Multiple.lm.Exp)
+summary(Multiple.lm.Living) #0.74
+summary(Multiple.lm.Log) #0.75
+summary(Multiple.lm.Exp) #0.76
 
 
-#plot the results
-{
-png("./Output/Mendota.Fdom-aa.2018.png", width = 8, height = 6, units = "in", res=300)
-par(mfrow=c(2,2))
-# par(mfrow=c(1,3))
-# plot(Fdom ~ jitter(AnoxicAge), data = aa.DOY.Living.long[aa.DOY.Living.long$AnoxicAge==0,],
-#         las = 1,
-#         ylim = c(13,17),
-#         xlab = "Anoxic age (d)",
-#         ylab = "FDOM",
-#      bg = Depth, pch = 21)
-plot(Fdom ~ AnoxicAge, data = aa.DOY.Living.long[aa.DOY.Living.long$AnoxicAge!=0,],
-     las = 1,
-     #ylim = c(14,17),
-     xlim = c(0,75),
-     xlab = "Anoxic age (d)",
-     ylab = expression(F[365/480]~(QSE)),
-     main = "Livingstone",
-     #bg = Depth,
-     pch = 21)
-text(x=11, y = 16.8, labels = bquote(R^2 == .(Anoxic.R2.living)))
-abline(Anoxic.lm.Living)
-mtext("a", side = 3, at = -1)
-# plot(Fdom ~ Depth, data = aa.DOY.Living.long[aa.DOY.Living.long$AnoxicAge!=0,],
+# #plot the results
+# {
+# png("./Output/Mendota.Fdom-aa.2018.png", width = 8, height = 6, units = "in", res=300)
+# par(mfrow=c(2,2))
+# # par(mfrow=c(1,3))
+# # plot(Fdom ~ jitter(AnoxicAge), data = aa.DOY.Living.long[aa.DOY.Living.long$AnoxicAge==0,],
+# #         las = 1,
+# #         ylim = c(13,17),
+# #         xlab = "Anoxic age (d)",
+# #         ylab = "FDOM",
+# #      bg = Depth, pch = 21)
+# plot(Fdom ~ AnoxicAge, data = aa.DOY.Living.long[aa.DOY.Living.long$AnoxicAge!=0,],
+#      las = 1,
+#      #ylim = c(14,17),
+#      xlim = c(0,75),
+#      xlab = "Anoxic age (d)",
+#      ylab = expression(F[365/480]~(QSE)),
+#      main = "Livingstone",
+#      #bg = Depth,
+#      pch = 21)
+# text(x=11, y = 16.8, labels = bquote(R^2 == .(Anoxic.R2.living)))
+# abline(Anoxic.lm.Living)
+# mtext("a", side = 3, at = -1)
+# # plot(Fdom ~ Depth, data = aa.DOY.Living.long[aa.DOY.Living.long$AnoxicAge!=0,],
+# #      las = 1,
+# #      ylim = c(14,17),
+# #      xlim = c(9,25),
+# #      xlab = "Depth (m)",
+# #      ylab = "FDOM",
+# #      main = "Livingstone",
+# #      bg = AnoxicAge, pch = 21)
+# # abline(Depth.lm.Living)
+# # text(x=11.4, y = 16.8, labels = bquote(R^2 == .(Depth.R2.living)))
+# # mtext("b", side = 3, at = 9)
+# 
+# plot(Fdom ~ AnoxicAge, data = aa.DOY.Log.long[aa.DOY.Log.long$AnoxicAge!=0,],
+#      las = 1,
+#      ylim = c(14,17),
+#      xlim = c(0,75),
+#      xlab = "Anoxic age (d)",
+#      ylab = expression(F[365/480]~(QSE)),
+#      main = "Log-linear",
+#      #bg = Depth,
+#      pch = 21)
+# text(x=11, y = 16.8, labels = bquote(R^2 == .(Anoxic.R2.Log)))
+# abline(Anoxic.lm.Log)
+# mtext("b", side = 3, at = -1)
+# 
+# plot(Fdom ~ AnoxicAge, data = aa.DOY.Exp.long[aa.DOY.Exp.long$AnoxicAge!=0,],
+#      las = 1,
+#      ylim = c(14,17),
+#      xlim = c(0,75),
+#      xlab = "Anoxic age (d)",
+#      ylab = expression(F[365/480]~(QSE)),
+#      main = "Exponential plateau",
+#      #bg = Depth,
+#      pch = 21)
+# text(x=11, y = 16.8, labels = bquote(R^2 == .(Anoxic.R2.Exp)))
+# abline(Anoxic.lm.Exp)
+# mtext("c", side = 3, at = -1)
+# plot(Fdom ~ Depth, data = aa.DOY.Exp.long[aa.DOY.Exp.long$AnoxicAge!=0,],
 #      las = 1,
 #      ylim = c(14,17),
 #      xlim = c(9,25),
 #      xlab = "Depth (m)",
-#      ylab = "FDOM",
-#      main = "Livingstone",
-#      bg = AnoxicAge, pch = 21)
+#      ylab = expression(F[365/480]~(QSE)),
+#      main = "Depth",
+#      #bg = AnoxicAge,
+#      pch = 21)
 # abline(Depth.lm.Living)
 # text(x=11.4, y = 16.8, labels = bquote(R^2 == .(Depth.R2.living)))
-# mtext("b", side = 3, at = 9)
-
-plot(Fdom ~ AnoxicAge, data = aa.DOY.Log.long[aa.DOY.Log.long$AnoxicAge!=0,],
-     las = 1,
-     ylim = c(14,17),
-     xlim = c(0,75),
-     xlab = "Anoxic age (d)",
-     ylab = expression(F[365/480]~(QSE)),
-     main = "Log-linear",
-     #bg = Depth,
-     pch = 21)
-text(x=11, y = 16.8, labels = bquote(R^2 == .(Anoxic.R2.Log)))
-abline(Anoxic.lm.Log)
-mtext("b", side = 3, at = -1)
-
-plot(Fdom ~ AnoxicAge, data = aa.DOY.Exp.long[aa.DOY.Exp.long$AnoxicAge!=0,],
-     las = 1,
-     ylim = c(14,17),
-     xlim = c(0,75),
-     xlab = "Anoxic age (d)",
-     ylab = expression(F[365/480]~(QSE)),
-     main = "Exponential plateau",
-     #bg = Depth,
-     pch = 21)
-text(x=11, y = 16.8, labels = bquote(R^2 == .(Anoxic.R2.Exp)))
-abline(Anoxic.lm.Exp)
-mtext("c", side = 3, at = -1)
-plot(Fdom ~ Depth, data = aa.DOY.Exp.long[aa.DOY.Exp.long$AnoxicAge!=0,],
-     las = 1,
-     ylim = c(14,17),
-     xlim = c(9,25),
-     xlab = "Depth (m)",
-     ylab = expression(F[365/480]~(QSE)),
-     main = "Depth",
-     #bg = AnoxicAge,
-     pch = 21)
-abline(Depth.lm.Living)
-text(x=11.4, y = 16.8, labels = bquote(R^2 == .(Depth.R2.living)))
-mtext("d", side = 3, at = 9)
-dev.off()
-}
+# mtext("d", side = 3, at = 9)
+# dev.off()
+# }
 
 
 #Repeat all steps for 2020
@@ -891,22 +891,22 @@ Alpha.R2.Living.2020 = round(summary(Alpha.lm.Living.2020)$r.squared,3)
 
 #All the summaries together
 #Anoxic age
-summary(Anoxic.lm.Living.2020)
-summary(Anoxic.lm.Log.2020)
-summary(Anoxic.lm.Exp.2020)
+summary(Anoxic.lm.Living.2020) #0.55
+summary(Anoxic.lm.Log.2020) #0.57
+summary(Anoxic.lm.Exp.2020) #0.58
 #Depth
-summary(Depth.lm.Living.2020)
+summary(Depth.lm.Living.2020) #0.37
 #Anoxic age + depth
-summary(Multiple.lm.Living.2020)
-summary(Multiple.lm.Log.2020)
-summary(Multiple.lm.Exp.2020)
+summary(Multiple.lm.Living.2020) #0.83
+summary(Multiple.lm.Log.2020) #0.84
+summary(Multiple.lm.Exp.2020) #0.84
 
 
 
 
-
+#To be modified in inkscape (include boxplot in panels b and d)
 {
-  pdf("./Data/Mendota/Output/Fdom-aa.2018-2020.pdf", width = 7, height = 3.5)
+  pdf("./Data/Mendota/Output/Fig.2 Fdom-aa.2018-2020.pdf", width = 7, height = 3.5)
   # png("./Data/Mendota/Output/Fdom-aa.2018-2020.png", width = 7, height = 3.5, units = "in", res=300)
   par(mfrow=c(2,3))
   par(mar=c(4,5,1,1.5)+.1)
@@ -917,7 +917,7 @@ summary(Multiple.lm.Exp.2020)
        cex = 1.8,
        las = 1,cex.axis = 1.2, cex.lab=1.2)
   mtext("a", side = 3, at = 115)
-  plot(FDOM.exp.2018.list[[1]]$Fdom[FDOM.exp.2018.list[[2]]$AnoxicAge!=0] ~ FDOM.exp.2018.list[[1]]$AnoxicAge[FDOM.exp.2018.list[[2]]$AnoxicAge!=0],
+  plot(FDOM.exp.2018.list[[1]]$Fdom[FDOM.exp.2018.list[[2]]$AnoxicAge!=0] ~ FDOM.exp.2018.list[[2]]$AnoxicAge[FDOM.exp.2018.list[[2]]$AnoxicAge!=0],
        xlab = "Anoxic age (days)",
        # ylab = expression(F[365/480]~(QSE)),
        ylim = c(13,17),
@@ -941,7 +941,7 @@ summary(Multiple.lm.Exp.2020)
        cex = 1.8,
        las = 1,cex.axis = 1.2, cex.lab=1.2)
   mtext("c", side = 3, at = 135)
-  plot(FDOM.exp.2020.list[[1]]$Fdom[FDOM.exp.2020.list[[2]]$AnoxicAge!=0] ~ FDOM.exp.2020.list[[1]]$AnoxicAge[FDOM.exp.2020.list[[2]]$AnoxicAge!=0],
+  plot(FDOM.exp.2020.list[[1]]$Fdom[FDOM.exp.2020.list[[2]]$AnoxicAge!=0] ~ FDOM.exp.2020.list[[2]]$AnoxicAge[FDOM.exp.2020.list[[2]]$AnoxicAge!=0],
        xlab = "Anoxic age (days, threshold = 1)",
        # ylab = expression(F[365/480]~(QSE)),
        ylim = c(10,14),
@@ -985,7 +985,7 @@ FDOM.DOY.2020.NoOxic2.lm <- lm(FDOM.exp.2020.list[[2]]$Fdom[FDOM.exp.2020.list[[
 
 #Summaries
 #2018
-summary(FDOM.AA.2018.1.lm) #R2 = 0.59
+# summary(FDOM.AA.2018.1.lm) #R2 = 0.59
 summary(FDOM.DOY.2018.1.lm) #R2 = 0.84
 summary(FDOM.AA.2018.2.lm) #R2 = 0.63
 
@@ -996,15 +996,15 @@ summary(FDOM.AA.2018.NoOxic2.lm) #R2 = 0.56
 summary(FDOM.DOY.2018.NoOxic2.lm) #R2 = 0.32
 
 #2020
-summary(FDOM.AA.2020.1.lm) #R2 = 0.72
-summary(FDOM.DOY.2020.1.lm) #R2 = 0.80
-summary(FDOM.AA.2020.2.lm) #R2 = 0.74
+summary(FDOM.AA.2020.1.lm) #R2 = 0.68
+summary(FDOM.DOY.2020.1.lm) #R2 = 0.78
+summary(FDOM.AA.2020.2.lm) #R2 = 0.71
 
-summary(FDOM.AA.2020.NoOxic1.lm) #R2 = 0.70
-summary(FDOM.DOY.2020.NoOxic1.lm) #R2 = 0.35
+summary(FDOM.AA.2020.NoOxic1.lm) #R2 = 0.63
+summary(FDOM.DOY.2020.NoOxic1.lm) #R2 = 0.25
 
-summary(FDOM.AA.2020.NoOxic2.lm) #R2 = 0.66
-summary(FDOM.DOY.2020.NoOxic2.lm) #R2 = 0.36
+summary(FDOM.AA.2020.NoOxic2.lm) #R2 = 0.58
+summary(FDOM.DOY.2020.NoOxic2.lm) #R2 = 0.27
 
 
 

@@ -5,6 +5,8 @@ library(segmented)
 library(minpack.lm)
 library(tidyr)
 library(ggplot2)
+setwd("D:/Postdoc/Allemagne/Github/AnoxicAge")
+load("../AnoxicAge.RData")
 
 theme_klima<- function(base_size = 14, base_family = "") {
   # Starts with theme_grey and then modify some parts
@@ -38,11 +40,11 @@ theme_klima<- function(base_size = 14, base_family = "") {
     )
 }
 
+source('D:/Postdoc/Allemagne/Github/AnoxicAge/Scripts/TheilSen.R', encoding = 'UTF-8')
 
 
 
 
-setwd("D:/Postdoc/Allemagne/Github/AnoxicAge")
 #########################################################################################
 ###########################Calculate Jz Arendsee using loggers###########################
 #########################################################################################
@@ -262,6 +264,7 @@ AIC.table
 Jz.mat.day = as.data.frame(matrix(nrow=length(ar.depths), ncol = length(ar.year)))
 colnames(Jz.mat.day) = ar.year
 rownames(Jz.mat.day) = ar.depths
+Jz.mat.day.err <- Jz.mat.day
 
 ar.from.day <- round(matrix(c(1500,2000,1919,2000,1500,
                     1500,2000,707,2000,1500,
@@ -323,6 +326,7 @@ for(i in 1:length(ar.depths)){
     #Linear model
     Dec.Day = Ar.DO.yr.day$DOY
     value = Ar.DO.yr.day$value
+    # print(ar.year[j]); print(length(value))
     lin.mod = lm(value ~ Dec.Day)
     
     Dec.Day.segLm = c(seq(Dec.Day[1]-400,Dec.Day[1]-1,1),Dec.Day, seq(Dec.Day[length(Dec.Day)]+1,Dec.Day[length(Dec.Day)]+400,1))
@@ -348,6 +352,7 @@ for(i in 1:length(ar.depths)){
     AIC.table.day[counter,3] = round(AIC(segmented.mod))
     
     Jz.mat.day[i,j] = summary(lin.mod)$coefficients[2,1]*-1 #Multiply by -24 to have a positive consumption rate per day
+    Jz.mat.day.err[i,j] = summary(lin.mod)$coefficients[2,2]
     Jz.seg.list.day[[counter]] = segmented.mod
     Ar.seg.dates.day[counter,2] = Ar.DO.yr.day[round(summary(Jz.seg.list.day[[counter]])$psi[1,2]), "value"]
     Ar.seg.dates.day[counter,4] = Ar.DO.yr.day[round(summary(Jz.seg.list.day[[counter]])$psi[2,2]), "value"]
@@ -1025,8 +1030,9 @@ Bats <- read.csv("./Data/Raw/Arendsee.alpha.csv")
 YSI.list = YSI.list[grep(pattern = ".csv",list.files("./Data/Raw/Arendsee-cleaned"))]
 YSI.yrs = c(2017,2018,2019,2020,2021)
 Jz.YSI.list = list()
+Jz.YSI.list.err = list()
 Jz.YSI.lin.list = list()
-
+Jz.YSI.lin.list.err = list()
 
 
 #These cutoff were chosen a posteriori using the breakpoint thresholds, then manually adjusted
@@ -1075,7 +1081,9 @@ Ar.long.deep = Ar.long.deep[order(Ar.long.deep$Depth_m ,Ar.long.deep$DOY),]
 
 #Find Jz for each depth
 Jz.YSI = vector(length = length(unique(Ar.long.deep$Depth_m)))
+Jz.YSI.err = Jz.YSI
 Jz.YSI.lin = Jz.YSI
+Jz.YSI.lin.err = Jz.YSI.lin
 #Note. After looking at the pdf once, the second slope in the piecewise regression is always right
 pdf(paste0("./Exploration output/Ar.YSI.",YSI.yrs[i],".pdf"))
 for(k in 1:length(Jz.YSI)){
@@ -1113,6 +1121,7 @@ for(k in 1:length(Jz.YSI)){
   }
   
   lin.mod = lm(value[value != min(value)] ~ Dec.Day[value != min(value)])
+  print(c(length(value[value != min(value)]),unique(Ar.long.deep$Depth_m)[k]))
   
   Dec.Day.segLm = c(seq(Dec.Day[1]-200,Dec.Day[1]-1,1),Dec.Day, seq(Dec.Day[length(Dec.Day)]+1,Dec.Day[length(Dec.Day)]+300,1))
   value.dummy = max(value)
@@ -1133,11 +1142,15 @@ for(k in 1:length(Jz.YSI)){
                                 paste("Second breakpoint is", round(segmented.mod$psi[2,2]), "day", sep = " ")))
   
   Jz.YSI[k] = (segmented.mod$coefficients[2] + segmented.mod$coefficients[3])*-1
-  Jz.YSI.lin[k] = coef(lin.mod)[2] * -1
+  Jz.YSI.err[k] = summary(segmented.mod)$coef[2,2] + summary(segmented.mod)$coef[3,2]
+  Jz.YSI.lin[k] = summary(lin.mod)$coef[2,1] * -1
+  Jz.YSI.lin.err[k] = summary(lin.mod)$coef[2,2]
 }
 dev.off()
 Jz.YSI.list[[i]] = Jz.YSI
+Jz.YSI.list.err[[i]] = Jz.YSI.err
 Jz.YSI.lin.list[[i]] = Jz.YSI.lin
+Jz.YSI.lin.list.err[[i]] = Jz.YSI.lin.err
 
 #Select the right alphas
 #2017: 33:48
@@ -1487,13 +1500,13 @@ dev.off()
 ###########################################################################################
 
 #2017: 119-187 #Now 94-200
-#2018: 133-199 #Now 122-192
+#2018: 133-199 #Now 122-182
 #2019: 117-200 #Now 106-200
 #2020: 124-179 #Now 114-182
 #2020: 130-169 #Now 143-165
 
-DOY.ini = c(94,122,108,114,145)
-DOY.end = c(200,192,201,182, 169)
+DOY.ini = c(94,122,108,114,115)
+DOY.end = c(200,182,201,182, 169)
 
 #Create R2 matrix
 R2.mat = matrix(nrow=5, ncol = 3)
@@ -1511,6 +1524,7 @@ Jz.lowres.slice.list = list()
 ar.alpha.list = list()
 
 Ar.Jz.lm.best.list = list()
+Jz.lowres = list()
 for(i in 1:length(YSI.list)){
   Ar.YSI = read.csv(paste0("./Data/Raw/Arendsee-cleaned/",YSI.list[i]))
   
@@ -1537,35 +1551,84 @@ for(i in 1:length(YSI.list)){
   #Order the dataframe
   Ar.long.deep = Ar.long.deep[order(Ar.long.deep$Depth_m ,Ar.long.deep$DOY),]
   
-  #Keep only matching date to Rinko profiles
-  Ar.long.deep.lowres <- Ar.long.deep[which(Ar.long.deep$DOY==DOY.ini[i] | Ar.long.deep$DOY==DOY.end[i]),]
-  Ar.long.deep.lowres.a <- Ar.long.deep.lowres %>% 
-    group_by(Depth_m, DOY) %>% summarize(DO_mgL = mean(DO_mgL)) 
-  Jz.lowres = vector(length = nrow(Ar.long.deep.lowres.a)/2)
-  Depth.lowres = unique(Ar.long.deep.lowres.a$Depth_m)
-  DOY.lowres = max(Ar.long.deep.lowres.a$DOY) - min(Ar.long.deep.lowres.a$DOY)
+  #Original method
+  # #Keep only matching date to Rinko profiles
+  # Ar.long.deep.lowres <- Ar.long.deep[which(Ar.long.deep$DOY==DOY.ini[i] | Ar.long.deep$DOY==DOY.end[i]),]
+  # Ar.long.deep.lowres.a <- Ar.long.deep.lowres %>% 
+  #   group_by(Depth_m, DOY) %>% summarize(DO_mgL = mean(DO_mgL)) 
+  # Jz.lowres = vector(length = nrow(Ar.long.deep.lowres.a)/2)
+  # Depth.lowres = unique(Ar.long.deep.lowres.a$Depth_m)
+  # DOY.lowres = max(Ar.long.deep.lowres.a$DOY) - min(Ar.long.deep.lowres.a$DOY)
+  # 
+  # 
+  # for(a in 1:(nrow(Ar.long.deep.lowres.a)/2)){
+  #   Jz.lowres[a] = (max(Ar.long.deep.lowres.a[Ar.long.deep.lowres.a$Depth_m==Depth.lowres[a],"DO_mgL"]) - 
+  #                     min(Ar.long.deep.lowres.a[Ar.long.deep.lowres.a$Depth_m==Depth.lowres[a],"DO_mgL"]))/DOY.lowres
+  # }
+
+  # #TheilSen slopes
+  # #Keep only profiles within 2 dates
+  # Ar.long.deep = Ar.long.deep[Ar.long.deep$DOY >= DOY.ini[i] & Ar.long.deep$DOY <= DOY.end[i],]
+  # 
+  # #Keep only values higher than 2mgO2/L
+  # Ar.long.deep = Ar.long.deep[Ar.long.deep$DO_mgL >=2,]
+  # 
+  # Depths = unique(Ar.long.deep$Depth_m)
+  # Jz.lowres = matrix(nrow=length(Depths), ncol = 2)
+  # colnames(Jz.lowres) = c("Slope", "MAD") 
+  # for(j in 1:length(Depths)){
+  #   Ar.long.deep.temp = Ar.long.deep[Ar.long.deep$Depth_m == Depths[j],]
+  #   TheilSen.store = TheilSen(x = Ar.long.deep.temp$DOY, y = Ar.long.deep.temp$DO_mgL)
+  #   Jz.lowres[j,1] = unlist(TheilSen.store[2])
+  #   Jz.lowres[j,2] = unlist(TheilSen.store[3])
+  # }
   
   
-  for(a in 1:(nrow(Ar.long.deep.lowres.a)/2)){
-    Jz.lowres[a] = (max(Ar.long.deep.lowres.a[Ar.long.deep.lowres.a$Depth_m==Depth.lowres[a],"DO_mgL"]) - 
-                      min(Ar.long.deep.lowres.a[Ar.long.deep.lowres.a$Depth_m==Depth.lowres[a],"DO_mgL"]))/DOY.lowres
+  #2 oxic profiles - 28 days apart
+  #Keep only profiles within 2 dates
+  Ar.long.deep = Ar.long.deep[Ar.long.deep$DOY >= DOY.ini[i] & Ar.long.deep$DOY <= DOY.end[i],]
+  
+  #Keep only values higher than 2mgO2/L
+  Ar.long.deep = Ar.long.deep[Ar.long.deep$DO_mgL >=2,]
+  
+  Depths = unique(Ar.long.deep$Depth_m)
+  Jz.lowres = matrix(nrow=length(Depths), ncol = 2)
+  colnames(Jz.lowres) = c("Slope", "Error") 
+  rownames(Jz.lowres) = Depths
+  for(j in 1:length(Depths)){
+    Ar.long.deep.temp = Ar.long.deep[Ar.long.deep$Depth_m == Depths[j],]
+    Ar.long.deep.temp = Ar.long.deep.temp %>% group_by(DOY) %>% summarize(DO_mgL = mean(DO_mgL))
+    
+    #Fill in missing days (linear interpolation)
+    Ar.long.filled = t(Ar.long.deep.temp)
+    colnames(Ar.long.filled) = Ar.long.filled[1,]
+    Ar.long.filled = t(as.matrix(Ar.long.filled[-1,]))
+    Ar.long.filled = interpolation_fct(Ar.long.filled)
+    
+    #Calculate Jz between each pair of points
+    Slope.temp = vector(length=length(Ar.long.filled)-28)
+    for(k in 1:(length(Ar.long.filled)-28)){
+      Slope.temp[k] = (Ar.long.filled[,k]-Ar.long.filled[,k+28])/28
+    }
+    Jz.lowres[j,1] = mean(Slope.temp)
+    Jz.lowres[j,2] = sd(Slope.temp)/sqrt(length(Slope.temp))
+    # print(c(length(Slope.temp), Depths[j]))
   }
+slice.beg = c(30,30,30,30,30)
+slice.end = c(47,47,47,47,47)
 
-
-slice.beg = c(38,33,33,33,34)
-slice.end = c(49,47,47,47,47)
-
-Jz.lowres.end = c(8,3,3,3,4)
+# Jz.lowres.end = c(8,3,3,3,4)
 
 
 ar.alpha <- Bats%>% slice(slice.beg[i]:slice.end[i]) %>% select(alpha)
-if(i == 1) ar.alpha = as.matrix(ar.alpha[-11,])
+# if(i == 1) ar.alpha = as.matrix(ar.alpha[-11,])
 ar.alpha.list[[i]] = ar.alpha
-Jz.lowres.slice = Jz.lowres[-c(1:Jz.lowres.end[i])]# Remove the first few  values because they are identical (likely because sediments to volume is too low)
+Jz.lowres.slice = Jz.lowres #[-c(1:Jz.lowres.end[i])]# Remove the first few  values because they are identical (likely because sediments to volume is too low)
+if(i == 1) Jz.lowres.slice = Jz.lowres.slice[-19,]
 Jz.lowres.slice.list[[i]] = Jz.lowres.slice
 
-plot(Jz.lowres.slice ~ ar.alpha[,1])
-Ar.Jz.lowres = lm(Jz.lowres.slice ~ ar.alpha[,1])
+plot(Jz.lowres.slice[,1] ~ ar.alpha[,1])
+Ar.Jz.lowres = lm(Jz.lowres.slice[,1] ~ ar.alpha[,1])
 # Ar.Jz.lowres.log = lm(Jz.lowres.slice ~ log10(ar.alpha[,1]))
 
 #Save relevant comparison metrics
@@ -1573,8 +1636,8 @@ R2.mat[i,1] = summary(Ar.Jz.lowres)$r.squared
 AIC.mat[i,1] = AIC(Ar.Jz.lowres)
 RMSE.mat[i,1] = sqrt(mean(Ar.Jz.lowres$residuals^2))
 
-temp = Jz.lowres.slice
-temp.max = max(Jz.lowres.slice)
+temp = Jz.lowres.slice[,1]
+temp.max = max(Jz.lowres.slice[,1])
 Ar.Jz.lowres.log = nlsLM(temp ~ b*log10(k*ar.alpha[,1]),
                                  start = list(b=0.08, k=200))
 
@@ -1608,14 +1671,14 @@ RMSE.mat[i,3] = sqrt(mean(summary(Ar.Jz.lowres.exp)$residuals^2))
 Ar.Jz.lm.best.list[[i]] = list(Ar.Jz.lowres, Ar.Jz.lowres.log, Ar.Jz.lowres.exp)
 }
 
-best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][-11] ~ ar.alpha.list[[1]][-11,])
+best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1])
 
 {
-  pdf("./Output/Ar.Jz-Alpha.BestLowRes.TEST.pdf", width = 8, height = 3.3)
+  pdf("./Output/Ar.Jz-Alpha.BestLowRes.ST.pdf", width = 8, height = 3.3)
   par(mfrow=c(1,3))
   par(mar = c(5,5,4,2)+0.2)
   
-  plot(Jz.lowres.slice.list[[1]] ~ ar.alpha.list[[1]][,1],
+  plot(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1],
        las = 1,
        xlim = c(0,0.25),
        ylim = c(0.05, 0.3),
@@ -1623,24 +1686,24 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][-11] ~ ar.alpha.list[[1]][-11,
        ylab = expression(J[z]~(mg~O[2]~L^-1~d^-1)),
        main = "Linear",
        pch = 16, col = "blue")
-  abline(best.2017.short.lm, col = "blue")
-  points(Jz.lowres.slice.list[[2]] ~ ar.alpha.list[[2]][,1],
+  # abline(best.2017.short.lm, col = "blue")
+  points(Jz.lowres.slice.list[[2]][,1] ~ ar.alpha.list[[2]][,1],
          pch = 16, col = "chartreuse3")
   # abline(Ar.Jz.lm.best.list[[2]][[1]], col = "chartreuse3")
-  points(Jz.lowres.slice.list[[3]] ~ ar.alpha.list[[3]][,1],
+  points(Jz.lowres.slice.list[[3]][,1] ~ ar.alpha.list[[3]][,1],
          pch = 16, col = "red")
   # abline(Ar.Jz.lm.best.list[[3]][[1]], col = "red")
-  points(Jz.lowres.slice.list[[4]] ~ ar.alpha.list[[4]][,1],
+  points(Jz.lowres.slice.list[[4]][,1] ~ ar.alpha.list[[4]][,1],
          pch = 16, col = "pink")
   # abline(Ar.Jz.lm.best.list[[4]][[1]], col = "pink")
-  points(Jz.lowres.slice.list[[5]] ~ ar.alpha.list[[5]][,1],
+  points(Jz.lowres.slice.list[[5]][,1] ~ ar.alpha.list[[5]][,1],
          pch = 16, col = "#00B0F0")
   # abline(Ar.Jz.lm.best.list[[5]][[1]], col = "#00B0F0")
   
   legend("topleft", legend = c("2017","2018","2019","2020", "2021"),
          text.col = c("blue","chartreuse3","red","pink", "#00B0F0"))
   
-  plot(Jz.lowres.slice.list[[1]] ~ ar.alpha.list[[1]][,1],
+  plot(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1],
        las = 1,
        xlim = c(0,0.25),
        ylim = c(0.05, 0.3),
@@ -1650,24 +1713,24 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][-11] ~ ar.alpha.list[[1]][-11,
        pch = 16, col = "blue")
   # curve(coef(Ar.Jz.lm.best.list[[1]][[2]])[1]*log10(x*coef(Ar.Jz.lm.best.list[[1]][[2]])[2]),
   #        add=T, col ="blue", lty = 2)
-  points(Jz.lowres.slice.list[[2]] ~ ar.alpha.list[[2]][,1],
+  points(Jz.lowres.slice.list[[2]][,1] ~ ar.alpha.list[[2]][,1],
          pch = 16, col = "chartreuse3")
   curve(coef(Ar.Jz.lm.best.list[[2]][[2]])[1]*log10(x*coef(Ar.Jz.lm.best.list[[2]][[2]])[2]),
         add=T, col ="chartreuse3", lty = 2)
-  points(Jz.lowres.slice.list[[3]] ~ ar.alpha.list[[2]][,1],
+  points(Jz.lowres.slice.list[[3]][,1] ~ ar.alpha.list[[2]][,1],
          pch = 16, col = "red")
   curve(coef(Ar.Jz.lm.best.list[[3]][[2]])[1]*log10(x*coef(Ar.Jz.lm.best.list[[3]][[2]])[2]),
         add=T, col ="red", lty = 2)
-  points(Jz.lowres.slice.list[[4]] ~ ar.alpha.list[[2]][,1],
+  points(Jz.lowres.slice.list[[4]][,1] ~ ar.alpha.list[[2]][,1],
          pch = 16, col = "pink")
-  # curve(coef(Ar.Jz.lm.best.list[[4]][[2]])[1]*log10(x*coef(Ar.Jz.lm.best.list[[4]][[2]])[2]),
-  #       add=T, col ="pink")
-  points(Jz.lowres.slice.list[[5]] ~ ar.alpha.list[[5]][,1],
+  curve(coef(Ar.Jz.lm.best.list[[4]][[2]])[1]*log10(x*coef(Ar.Jz.lm.best.list[[4]][[2]])[2]),
+        add=T, col ="pink")
+  points(Jz.lowres.slice.list[[5]][,1] ~ ar.alpha.list[[5]][,1],
          pch = 16, col = "#00B0F0")
-  curve(coef(Ar.Jz.lm.best.list[[5]][[2]])[1]*log10(x*coef(Ar.Jz.lm.best.list[[5]][[2]])[2]),
-        add=T, col ="#00B0F0")
+  # curve(coef(Ar.Jz.lm.best.list[[5]][[2]])[1]*log10(x*coef(Ar.Jz.lm.best.list[[5]][[2]])[2]),
+  #       add=T, col ="#00B0F0")
 
-  plot(Jz.lowres.slice.list[[1]] ~ ar.alpha.list[[1]][,1],
+  plot(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1],
        las = 1,
        xlim = c(0,0.25),
        ylim = c(0.05, 0.3),
@@ -1680,29 +1743,29 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][-11] ~ ar.alpha.list[[1]][-11,
           exp(-1*coef(Ar.Jz.lm.best.list[[1]][[3]])[3]*x), 
         add=T, col = "blue")
   
-  points(Jz.lowres.slice.list[[2]] ~ ar.alpha.list[[2]][,1], pch = 16, col = "chartreuse3")
+  points(Jz.lowres.slice.list[[2]][,1] ~ ar.alpha.list[[2]][,1], pch = 16, col = "chartreuse3")
   curve(coef(Ar.Jz.lm.best.list[[2]][[3]])[1] - (coef(Ar.Jz.lm.best.list[[2]][[3]])[1] - 
           coef(Ar.Jz.lm.best.list[[2]][[3]])[2])*
                 exp(-1*coef(Ar.Jz.lm.best.list[[2]][[3]])[3]*x), 
         add=T, col = "chartreuse3")
   
-  points(Jz.lowres.slice.list[[3]] ~ ar.alpha.list[[3]][,1], pch = 16, col = "red")
+  points(Jz.lowres.slice.list[[3]][,1] ~ ar.alpha.list[[3]][,1], pch = 16, col = "red")
   curve(coef(Ar.Jz.lm.best.list[[3]][[3]])[1] - (coef(Ar.Jz.lm.best.list[[3]][[3]])[1] - 
                                              coef(Ar.Jz.lm.best.list[[3]][[3]])[2])*
           exp(-1*coef(Ar.Jz.lm.best.list[[3]][[3]])[3]*x), 
         add=T, col = "red")
   
-  points(Jz.lowres.slice.list[[4]] ~ ar.alpha.list[[4]][,1], pch = 16, col = "pink")
+  points(Jz.lowres.slice.list[[4]][,1] ~ ar.alpha.list[[4]][,1], pch = 16, col = "pink")
   curve(coef(Ar.Jz.lm.best.list[[4]][[3]])[1] - (coef(Ar.Jz.lm.best.list[[4]][[3]])[1] -
                                                    coef(Ar.Jz.lm.best.list[[4]][[3]])[2])*
           exp(-1*coef(Ar.Jz.lm.best.list[[4]][[3]])[3]*x),
-        add=T, col = "pink", lty = 2)
+        add=T, col = "pink")
   
-  points(Jz.lowres.slice.list[[5]] ~ ar.alpha.list[[5]][,1], pch = 16, col = "#00B0F0")
-  curve(coef(Ar.Jz.lm.best.list[[5]][[3]])[1] - (coef(Ar.Jz.lm.best.list[[5]][[3]])[1] - 
-                                                   coef(Ar.Jz.lm.best.list[[5]][[3]])[2])*
-          exp(-1*coef(Ar.Jz.lm.best.list[[5]][[3]])[3]*x), 
-        add=T, col = "#00B0F0")
+  points(Jz.lowres.slice.list[[5]][,1] ~ ar.alpha.list[[5]][,1], pch = 16, col = "#00B0F0")
+  # curve(coef(Ar.Jz.lm.best.list[[5]][[3]])[1] - (coef(Ar.Jz.lm.best.list[[5]][[3]])[1] - 
+  #                                                  coef(Ar.Jz.lm.best.list[[5]][[3]])[2])*
+  #         exp(-1*coef(Ar.Jz.lm.best.list[[5]][[3]])[3]*x), 
+  #       add=T, col = "#00B0F0")
   
   dev.off()
 }
@@ -1736,15 +1799,15 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][-11] ~ ar.alpha.list[[1]][-11,
 {
   pdf("./Output/Figure3.pdf", width = 9, height = 9)
   par(mfrow=c(3,3))
-  par(mar = c(5,5,4,2)+0.2)
+  par(mar = c(5,5.5,4,2)+0.2)
   ############################################Loggers########################################
   plot(Ar.Jz.day.2017.lin ~ Jz.mat[, 6], las =1,
        # xlab = expression(alpha(z)),
        xlab = "",
        xaxt = "n",
        xlim = c(0,0.25),
-       ylab = expression(J[z]~(mg~O[2]~L^-1~d^-1)),
-       ylim = c(0.04, 0.25),cex = 1.8, cex.axis=1.4, cex.lab = 1.8,
+       ylab = "",#expression(J[z]~(mg~O[2]~L^-1~d^-1)),
+       ylim = c(0.04, 0.25),cex = 1.8, cex.axis=1.4, cex.lab = 1.8,cex.main = 1.6,
        main = "Linear", col ="blue",pch=16)
   # abline(lm(Ar.Jz.2017 ~ Jz.mat[, 6]), col ="blue", lty =2)
   points(Ar.Jz.day.2018.lin ~ Jz.mat[, 6], col ="chartreuse3",pch=16,cex = 1.8)
@@ -1765,7 +1828,7 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][-11] ~ ar.alpha.list[[1]][-11,
        xaxt = "n",
        yaxt = "n",
        xlim = c(0,0.25),
-       ylim = c(0.04, 0.25),cex = 1.8, cex.axis=1.4, cex.lab = 1.8,
+       ylim = c(0.04, 0.25),cex = 1.8, cex.axis=1.4, cex.lab = 1.8,cex.main = 1.6,
        main = "Log-linear", col ="blue",pch=16)
   curve(coef(Ar.Living.2017.day.lin.log )[1]*log10(x*coef(Ar.Living.2017.day.lin.log)[2]),
         add=T, col ="blue", lty = 2)
@@ -1791,7 +1854,7 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][-11] ~ ar.alpha.list[[1]][-11,
        xaxt = "n",
        yaxt = "n",
        xlim = c(0,0.25),
-       ylim = c(0.04, 0.25),cex = 1.8, cex.axis=1.4, cex.lab = 1.8,
+       ylim = c(0.04, 0.25),cex = 1.8, cex.axis=1.4, cex.lab = 1.8,cex.main = 1.6,
        main = "Exponential plateau", col ="blue",pch=16)
   curve(coef(Ar.Living.2017.day.lin.exp )[1] - (coef(Ar.Living.2017.day.lin.exp )[1] - coef(Ar.Living.2017.day.lin.exp )[2])*
           exp(-coef(Ar.Living.2017.day.lin.exp )[3]*x),
@@ -1821,7 +1884,7 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][-11] ~ ar.alpha.list[[1]][-11,
        xlab = "",
        # xlab = expression(alpha(z)),
        ylab = expression(J[z]~(mg~O[2]~L^-1~d^-1)),
-       main = "",cex = 1.8, cex.axis=1.4, cex.lab = 1.8,
+       main = "",cex = 1.8, cex.axis=1.4, cex.lab = 2.4,
        pch = 16, col = "chartreuse3")
   abline(Ar.Jz.alpha.YSI.2018, col = "chartreuse3", lty = 2)
   points(Jz.YSI.list[[1]][-c(1:3)] ~ alpha.YSI.list[[1]][,1],
@@ -1881,7 +1944,7 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][-11] ~ ar.alpha.list[[1]][-11,
        xlab = "",
        # xlab = expression(alpha(z)),
        # ylab = expression(J[z]~(mg~O[2]~L^-1~d^-1)),
-       main = "",cex = 1.8, cex.axis=1.4, cex.lab = 1.8,
+       main = "",cex = 1.8, cex.axis=1.5, cex.lab = 1.8,
        pch = 16, col = "chartreuse3")
   
   curve(coef(Ar.Jz.alpha.YSI.2018.exp)[1] - (coef(Ar.Jz.alpha.YSI.2018.exp)[1] - 
@@ -1916,105 +1979,410 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][-11] ~ ar.alpha.list[[1]][-11,
                                                coef(Ar.Jz.alpha.YSI.2021.exp)[2])*
           exp(-1*coef(Ar.Jz.alpha.YSI.2021.exp)[3]*x), 
         add=T, col = "#73BAE6")
-  
+
   #########################################2 oxic profiles#################################
-  plot(Jz.lowres.slice.list[[1]] ~ ar.alpha.list[[1]][,1],
+  plot(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1],
        las = 1,
        xlim = c(0,0.25),
-       ylim = c(0.05, 0.4),
-       xlab = expression(alpha(z)),
-       ylab = expression(J[z]~(mg~O[2]~L^-1~d^-1)),
+       ylim = c(0.05, 0.35),
+       xlab = "",
+       ylab = "",#expression(J[z]~(mg~O[2]~L^-1~d^-1)),
        main = "",cex = 1.8, cex.axis=1.4, cex.lab = 1.8,
        pch = 16, col = "blue")
-  abline(best.2017.short.lm, col = "blue")
-  points(Jz.lowres.slice.list[[2]] ~ ar.alpha.list[[2]][,1],
-         pch = 16, col = "chartreuse3",cex = 1.8)
+  # abline(best.2017.short.lm, col = "blue")
+  points(Jz.lowres.slice.list[[2]][,1] ~ ar.alpha.list[[2]][,1],
+         pch = 16, cex = 1.8,col = "chartreuse3")
   # abline(Ar.Jz.lm.best.list[[2]][[1]], col = "chartreuse3")
-  points(Jz.lowres.slice.list[[3]] ~ ar.alpha.list[[3]][,1],
-         pch = 16, col = "red",cex = 1.8)
+  points(Jz.lowres.slice.list[[3]][,1] ~ ar.alpha.list[[3]][,1],
+         pch = 16, cex = 1.8,col = "red")
   # abline(Ar.Jz.lm.best.list[[3]][[1]], col = "red")
-  points(Jz.lowres.slice.list[[4]] ~ ar.alpha.list[[4]][,1],
-         pch = 16, col = "pink",cex = 1.8)
+  points(Jz.lowres.slice.list[[4]][,1] ~ ar.alpha.list[[4]][,1],
+         pch = 16, cex = 1.8,col = "pink")
   # abline(Ar.Jz.lm.best.list[[4]][[1]], col = "pink")
-  points(Jz.lowres.slice.list[[5]] ~ ar.alpha.list[[5]][,1],
-         pch = 16, col = "#00B0F0",cex = 1.8)
-  # abline(Ar.Jz.lm.best.list[[5]][[1]], col = "#00B0F0")
+  points(Jz.lowres.slice.list[[5]][,1] ~ ar.alpha.list[[5]][,1],
+         pch = 16, cex = 1.8,col = "#00B0F0")
+  abline(Ar.Jz.lm.best.list[[5]][[1]], col = "#00B0F0", lty = 2)
   
-  plot(Jz.lowres.slice.list[[1]] ~ ar.alpha.list[[1]][,1],
+  plot(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1],
        las = 1,
        xlim = c(0,0.25),
-       ylim = c(0.05, 0.4),
-       yaxt = "n",
-       ylab = "",
+       ylim = c(0.05, 0.35),
        xlab = expression(alpha(z)),
-       # ylab = expression(J[z]~(mg~O[2]~L^-1~d^-1)),
-       main = "",cex = 1.8, cex.axis=1.4, cex.lab = 1.8,
+       ylab = "",
+       yaxt = "n",cex = 1.8, cex.axis=1.4, cex.lab = 2.4,
        pch = 16, col = "blue")
   curve(coef(Ar.Jz.lm.best.list[[1]][[2]])[1]*log10(x*coef(Ar.Jz.lm.best.list[[1]][[2]])[2]),
          add=T, col ="blue", lty = 2)
-  points(Jz.lowres.slice.list[[2]] ~ ar.alpha.list[[2]][,1],
-         pch = 16, col = "chartreuse3",cex = 1.8)
+  points(Jz.lowres.slice.list[[2]][,1] ~ ar.alpha.list[[2]][,1],
+         pch = 16, cex = 1.8,col = "chartreuse3")
   curve(coef(Ar.Jz.lm.best.list[[2]][[2]])[1]*log10(x*coef(Ar.Jz.lm.best.list[[2]][[2]])[2]),
         add=T, col ="chartreuse3", lty = 2)
-  points(Jz.lowres.slice.list[[3]] ~ ar.alpha.list[[2]][,1],
-         pch = 16, col = "red",cex = 1.8)
+  points(Jz.lowres.slice.list[[3]][,1] ~ ar.alpha.list[[2]][,1],
+         pch = 16, cex = 1.8,col = "red")
   curve(coef(Ar.Jz.lm.best.list[[3]][[2]])[1]*log10(x*coef(Ar.Jz.lm.best.list[[3]][[2]])[2]),
         add=T, col ="red", lty = 2)
-  points(Jz.lowres.slice.list[[4]] ~ ar.alpha.list[[2]][,1],
-         pch = 16, col = "pink",cex = 1.8)
-  # curve(coef(Ar.Jz.lm.best.list[[4]][[2]])[1]*log10(x*coef(Ar.Jz.lm.best.list[[4]][[2]])[2]),
-  #       add=T, col ="pink")
-  points(Jz.lowres.slice.list[[5]] ~ ar.alpha.list[[5]][,1],
-         pch = 16, col = "#00B0F0",cex = 1.8)
-  curve(coef(Ar.Jz.lm.best.list[[5]][[2]])[1]*log10(x*coef(Ar.Jz.lm.best.list[[5]][[2]])[2]),
-        add=T, col ="#00B0F0")
+  points(Jz.lowres.slice.list[[4]][,1] ~ ar.alpha.list[[2]][,1],
+         pch = 16, cex = 1.8,col = "pink")
+  curve(coef(Ar.Jz.lm.best.list[[4]][[2]])[1]*log10(x*coef(Ar.Jz.lm.best.list[[4]][[2]])[2]),
+        add=T, col ="pink", lty = 2)
+  points(Jz.lowres.slice.list[[5]][,1] ~ ar.alpha.list[[5]][,1],
+         pch = 16, cex = 1.8,col = "#00B0F0")
+  # curve(coef(Ar.Jz.lm.best.list[[5]][[2]])[1]*log10(x*coef(Ar.Jz.lm.best.list[[5]][[2]])[2]),
+  #       add=T, col ="#00B0F0")
   
-  plot(Jz.lowres.slice.list[[1]] ~ ar.alpha.list[[1]][,1],
+  plot(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1],
        las = 1,
        xlim = c(0,0.25),
-       ylim = c(0.05, 0.4),
-       yaxt = "n",
+       ylim = c(0.05, 0.35),
+       xlab = "",
        ylab = "",
-       xlab = expression(alpha(z)),
-       # ylab = expression(J[z]~(mg~O[2]~L^-1~d^-1)),
-       main = "",cex = 1.8, cex.axis=1.4, cex.lab = 1.8,
+       yaxt = "n",cex = 1.8, cex.axis=1.4, cex.lab = 1.8,
        pch = 16, col = "blue")
   curve(coef(Ar.Jz.lm.best.list[[1]][[3]])[1] - (coef(Ar.Jz.lm.best.list[[1]][[3]])[1] - 
                                                    coef(Ar.Jz.lm.best.list[[1]][[3]])[2])*
           exp(-1*coef(Ar.Jz.lm.best.list[[1]][[3]])[3]*x), 
         add=T, col = "blue")
   
-  points(Jz.lowres.slice.list[[2]] ~ ar.alpha.list[[2]][,1], pch = 16, col = "chartreuse3",cex = 1.8)
+  points(Jz.lowres.slice.list[[2]][,1] ~ ar.alpha.list[[2]][,1], pch = 16, cex = 1.8,col = "chartreuse3")
   curve(coef(Ar.Jz.lm.best.list[[2]][[3]])[1] - (coef(Ar.Jz.lm.best.list[[2]][[3]])[1] - 
                                                    coef(Ar.Jz.lm.best.list[[2]][[3]])[2])*
           exp(-1*coef(Ar.Jz.lm.best.list[[2]][[3]])[3]*x), 
         add=T, col = "chartreuse3")
   
-  points(Jz.lowres.slice.list[[3]] ~ ar.alpha.list[[3]][,1], pch = 16, col = "red",cex = 1.8)
+  points(Jz.lowres.slice.list[[3]][,1] ~ ar.alpha.list[[3]][,1], pch = 16, cex = 1.8,col = "red")
   curve(coef(Ar.Jz.lm.best.list[[3]][[3]])[1] - (coef(Ar.Jz.lm.best.list[[3]][[3]])[1] - 
                                                    coef(Ar.Jz.lm.best.list[[3]][[3]])[2])*
           exp(-1*coef(Ar.Jz.lm.best.list[[3]][[3]])[3]*x), 
         add=T, col = "red")
   
-  points(Jz.lowres.slice.list[[4]] ~ ar.alpha.list[[4]][,1], pch = 16, col = "pink",cex = 1.8)
+  points(Jz.lowres.slice.list[[4]][,1] ~ ar.alpha.list[[4]][,1], pch = 16, cex = 1.8,col = "pink")
   curve(coef(Ar.Jz.lm.best.list[[4]][[3]])[1] - (coef(Ar.Jz.lm.best.list[[4]][[3]])[1] -
                                                    coef(Ar.Jz.lm.best.list[[4]][[3]])[2])*
           exp(-1*coef(Ar.Jz.lm.best.list[[4]][[3]])[3]*x),
-        add=T, col = "pink", lty = 2)
+        add=T, col = "pink")
   
-  points(Jz.lowres.slice.list[[5]] ~ ar.alpha.list[[5]][,1], pch = 16, col = "#00B0F0",cex = 1.8)
-  curve(coef(Ar.Jz.lm.best.list[[5]][[3]])[1] - (coef(Ar.Jz.lm.best.list[[5]][[3]])[1] - 
+  points(Jz.lowres.slice.list[[5]][,1] ~ ar.alpha.list[[5]][,1], pch = 16, cex = 1.8,col = "#00B0F0")
+  curve(coef(Ar.Jz.lm.best.list[[5]][[3]])[1] - (coef(Ar.Jz.lm.best.list[[5]][[3]])[1] -
                                                    coef(Ar.Jz.lm.best.list[[5]][[3]])[2])*
-          exp(-1*coef(Ar.Jz.lm.best.list[[5]][[3]])[3]*x), 
+          exp(-1*coef(Ar.Jz.lm.best.list[[5]][[3]])[3]*x),
         add=T, col = "#00B0F0")
   
   dev.off()
 }
 
 
+# #Monte Carlo simulations for SI
+# Loggers.Y = Ar.Jz.day.2018.lin  #Calculated Jz
+# Loggers.X = Jz.mat[, 6] #alpha(z)
+# 
+# #Set parameters
+# Loggers.lin.a <- coef(lm(Ar.Jz.day.2018.lin ~ Jz.mat[, 6]))[1]
+# Loggers.lin.b <- coef(lm(Ar.Jz.day.2018.lin ~ Jz.mat[, 6]))[2]
+# Loggers.lin.fixed = Loggers.lin.a + Loggers.lin.b * Loggers.X
+# #Simulate 10000 datasets
+# Loggers.Jz.sd = c(0.0008,0.0004,0.0007,0.0042,0.0046) * sqrt(c(210,152,194,102,85)) #Values taken from table S2 * sqrt(N) to calculate back sd
+# Loggers.lin.sim <- replicate(n = 10000, rnorm(n = length(Loggers.X), mean = Loggers.lin.fixed, sd = Loggers.Jz.sd))
+# 
+# apply(X = Loggers.lin.sim , MARGIN = 1, FUN = mean) #Close to "fixed"
+# apply(X = Loggers.lin.sim , MARGIN = 1, FUN = sd) #Close to sd
+# sd(apply(X = Loggers.lin.sim , MARGIN = 1, FUN = mean)) #How close are simulations
+# 
+# #Find 10% and 90% quantiles
+# Loggers.lin.quants = apply(Loggers.lin.sim, 1, function(x) quantile(x, c(0.1, 0.9)))
+# 
+# 
+# #Log-linear
+# Loggers.log.b = coef(Ar.Living.2018.day.lin.log )[1]
+# Loggers.log.k = coef(Ar.Living.2018.day.lin.log )[2]
+# Loggers.log.fixed = Loggers.log.b * log10(Loggers.X*Loggers.log.k)
+# #Simulate 10000 datasets
+# Loggers.log.sim <- replicate(n = 10000, rnorm(n = length(Loggers.X), mean = Loggers.log.fixed, sd = Loggers.Jz.sd)) #sd comes from the lm function
+# 
+# apply(X = Loggers.log.sim , MARGIN = 1, FUN = mean) #Close to "fixed"
+# apply(X = Loggers.log.sim , MARGIN = 1, FUN = sd) #Close to sd
+# sd(apply(X = Loggers.log.sim , MARGIN = 1, FUN = mean)) #How close are simulations
+# 
+# #Find 10% and 90% quantiles
+# Loggers.log.quants = apply(Loggers.log.sim, 1, function(x) quantile(x, c(0.1, 0.9)))
+#   
+# #Exponential plateau
+# Loggers.exp.jm = coef(Ar.Living.2018.day.lin.exp)[1]
+# Loggers.exp.b = coef(Ar.Living.2018.day.lin.exp)[2]
+# Loggers.exp.k = coef(Ar.Living.2018.day.lin.exp)[3]
+# Loggers.exp.fixed = Loggers.exp.jm - (Loggers.exp.jm-Loggers.exp.b) * exp(-1*coef(Ar.Living.2018.day.lin.exp)[3]*Loggers.X)
+# #Simulate 10000 datasets
+# Loggers.exp.sim <- replicate(n = 10000, rnorm(n = length(Loggers.X), mean = Loggers.exp.fixed, sd = Loggers.Jz.sd)) #sd comes from the lm function
+# 
+# apply(X = Loggers.exp.sim , MARGIN = 1, FUN = mean) #Close to "fixed"
+# apply(X = Loggers.exp.sim , MARGIN = 1, FUN = sd) #Close to sd
+# sd(apply(X = Loggers.exp.sim , MARGIN = 1, FUN = mean)) #How close are simulations
+# 
+# #Find 10% and 90% quantiles
+# Loggers.exp.quants = apply(Loggers.exp.sim, 1, function(x) quantile(x, c(0.1, 0.9)))
+# 
+# ##########################With casts#####################################
+# YSI.Y = Jz.YSI.list[[2]] 
+# YSI.X = alpha.YSI.list[[2]][,1]
+# 
+# YSI.lin.a = coef(Ar.Jz.alpha.YSI.2018)[1]
+# YSI.lin.b = coef(Ar.Jz.alpha.YSI.2018)[2]
+# YSI.lin.fixed = YSI.lin.a + YSI.lin.b*YSI.X
+# #Simulate 10000 datasets
+# YSI.Jz.sd = Jz.YSI.list.err[[2]] * sqrt(c(351,348,365,363,359,364,349,345,346,347,348,286,225,192,173,161,143,118)) #Values taken from table S2 * sqrt(N) to calculate back sd
+# YSI.lin.sim <- replicate(n = 10000, rnorm(n = length(YSI.X), mean = YSI.lin.fixed, sd = YSI.Jz.sd))
+# 
+# #Find 10% and 90% quantiles
+# YSI.lin.quants = apply(YSI.lin.sim, 1, function(x) quantile(x, c(0.1, 0.9)))
+# 
+# #Log-linear
+# YSI.log.b = coef(Ar.Jz.alpha.YSI.2018.log)[1]
+# YSI.log.k = coef(Ar.Jz.alpha.YSI.2018.log)[2]
+# YSI.log.fixed = YSI.log.b * log10(YSI.log.k*YSI.X)
+# #Simulate 10000 datasets
+# YSI.log.sim <- replicate(n = 10000, rnorm(n = length(YSI.X), mean = YSI.log.fixed, sd = YSI.Jz.sd))
+# #Find 10% and 90% quantiles
+# YSI.log.quants = apply(YSI.log.sim, 1, function(x) quantile(x, c(0.1, 0.9)))
+# 
+# #Exponential-plateau
+# YSI.exp.Jm = coef(Ar.Jz.alpha.YSI.2018.exp)[1]
+# YSI.exp.b = coef(Ar.Jz.alpha.YSI.2018.exp)[2]
+# YSI.exp.k = coef(Ar.Jz.alpha.YSI.2018.exp)[3]
+# YSI.exp.fixed = YSI.exp.Jm - (YSI.exp.Jm + YSI.exp.b) * exp(-1*YSI.exp.k*YSI.X)
+# #Simulate 10000 datasets
+# YSI.exp.sim <- replicate(n = 10000, rnorm(n = length(YSI.X), mean = YSI.exp.fixed, sd = YSI.Jz.sd))
+# #Find 10% and 90% quantiles
+# YSI.exp.quants = apply(YSI.exp.sim, 1, function(x) quantile(x, c(0.1, 0.9)))
+# 
+# ###########################2 oxic profiles##############################
+# Oxic.Y = Jz.lowres.slice.list[[2]][,1] 
+# Oxic.X = ar.alpha.list[[2]][,1]
+# 
+# Oxic.lin.a = coef(Ar.Jz.lm.best.list[[2]][[1]])[1]
+# Oxic.lin.b = coef(Ar.Jz.lm.best.list[[2]][[1]])[2]
+# Oxic.lin.fixed = Oxic.lin.a + Oxic.lin.b * Oxic.X
+# 
+# Oxic.Jz.sd = Jz.lowres.slice.list[[2]][,2] * sqrt(c(rep(50,16),49,49))
+#   
+# #Simulate 10000 datasets
+# Oxic.lin.sim <- replicate(n = 10000, rnorm(n = length(Oxic.X), mean = Oxic.lin.fixed, sd = Oxic.Jz.sd))
+# #Find 10% and 90% quantiles
+# Oxic.lin.quants = apply(Oxic.lin.sim, 1, function(x) quantile(x, c(0.1, 0.9)))
+# 
+# #Log-linear
+# Oxic.log.b = coef(Ar.Jz.lm.best.list[[2]][[2]])[1]
+# Oxic.log.k = coef(Ar.Jz.lm.best.list[[2]][[2]])[2]
+# Oxic.log.fixed = Oxic.log.b * log10(Oxic.log.k*Oxic.X)
+# #Simulate 10000 datasets
+# Oxic.log.sim <- replicate(n = 10000, rnorm(n = length(Oxic.X), mean = Oxic.log.fixed, sd = Oxic.Jz.sd))
+# #Find 10% and 90% quantiles
+# Oxic.log.quants = apply(Oxic.log.sim, 1, function(x) quantile(x, c(0.1, 0.9)))
+# 
+# #Exponential-plateau
+# Oxic.exp.Jm = coef(Ar.Jz.lm.best.list[[2]][[3]])[1]
+# Oxic.exp.b = coef(Ar.Jz.lm.best.list[[2]][[3]])[2]
+# Oxic.exp.k = coef(Ar.Jz.lm.best.list[[2]][[3]])[3]
+# Oxic.exp.fixed = Oxic.exp.Jm - (Oxic.exp.Jm-Oxic.exp.b) * exp(-1*Oxic.exp.k*Oxic.X)
+# #Simulate 10000 datasets
+# Oxic.exp.sim <- replicate(n = 10000, rnorm(n = length(Oxic.X), mean = Oxic.exp.fixed, sd = Oxic.Jz.sd))
+# #Find 10% and 90% quantiles
+# Oxic.exp.quants = apply(Oxic.exp.sim, 1, function(x) quantile(x, c(0.1, 0.9)))
 
 
+# #Plot results
+# {
+# pdf("./Output/Figure S3 - Monte Carlo.pdf", width = 9, height = 9)
+# par(mfrow=c(3,3))
+# par(mar = c(5,5.5,4,2)+0.2)
+# #Loggers
+# plot(Loggers.Y ~ Loggers.X, las = 1, ylim = c(0.04, 0.25),
+#      ylab = "", xlab = "", xaxt="n",cex = 1.8, cex.axis=1.4, cex.lab = 1.8,cex.main = 1.6,
+#      main = "Linear")
+# lines(x = Loggers.X, Loggers.lin.fixed, lty = 1)
+# lines(x = Loggers.X, Loggers.lin.quants[1,], lty = 2)
+# lines(x = Loggers.X, Loggers.lin.quants[2,], lty = 2)
+# 
+# plot(Loggers.Y ~ Loggers.X, las = 1, ylim = c(0.04, 0.25),
+#      ylab = "", xlab = "", yaxt = "n", xaxt="n",
+#      main = "Log-linear", cex.main = 1.6,cex = 1.8)
+# lines(x = Loggers.X, Loggers.log.fixed, lty = 1)
+# lines(x = Loggers.X, Loggers.log.quants[1,], lty = 2)
+# lines(x = Loggers.X, Loggers.log.quants[2,], lty = 2)
+# 
+# plot(Loggers.Y ~ Loggers.X, las = 1, ylim = c(0.04, 0.25),
+#      ylab = "", xlab = "", yaxt = "n", xaxt="n",
+#      main = "Exponential-plateau", cex.main = 1.6,cex = 1.8)
+# lines(x = Loggers.X, Loggers.exp.fixed, lty = 1)
+# lines(x = Loggers.X, Loggers.exp.quants[1,], lty = 2)
+# lines(x = Loggers.X, Loggers.exp.quants[2,], lty = 2)
+# 
+# #Casts
+# plot(YSI.Y ~ YSI.X, las = 1, ylim = c(0.04, 0.25),
+#      ylab = expression(Jz~(mg~O[2]~L^-1~d^-1)),xlab = "", xaxt="n",
+#      cex = 1.8, cex.axis=1.4, cex.lab = 1.8)
+# lines(x = YSI.X, YSI.lin.fixed, lty = 1)
+# lines(x = YSI.X, YSI.lin.quants[1,], lty = 2)
+# lines(x = YSI.X, YSI.lin.quants[2,], lty = 2)
+# 
+# plot(YSI.Y ~ YSI.X, las = 1, ylim = c(0.04, 0.25),
+#      ylab = "", xlab = "", yaxt = "n", xaxt="n",cex = 1.8)
+# lines(x = YSI.X, YSI.log.fixed, lty = 1)
+# lines(x = YSI.X, YSI.log.quants[1,], lty = 2)
+# lines(x = YSI.X, YSI.log.quants[2,], lty = 2)
+# 
+# plot(YSI.Y ~ YSI.X, las = 1, ylim = c(0.04, 0.25),
+#      ylab = "", xlab = "", yaxt = "n", xaxt="n",cex = 1.8)
+# lines(x = YSI.X, YSI.exp.fixed, lty = 1)
+# lines(x = YSI.X, YSI.exp.quants[1,], lty = 2)
+# lines(x = YSI.X, YSI.exp.quants[2,], lty = 2)
+# 
+# #2 oxic profiles
+# plot(Oxic.Y ~ Oxic.X, las = 1, ylim = c(0.04, 0.25),
+#      ylab = "", xlab = "",cex = 1.8, cex.axis=1.4, cex.lab = 1.8)
+# lines(x = Oxic.X, Oxic.lin.fixed, lty = 1)
+# lines(x = Oxic.X, Oxic.lin.quants[1,], lty = 2)
+# lines(x = Oxic.X, Oxic.lin.quants[2,], lty = 2)
+# 
+# plot(Oxic.Y ~ Oxic.X, las = 1, ylim = c(0.04, 0.25),
+#      ylab = "", xlab = expression(alpha(z)), yaxt = "n",
+#      cex = 1.8, cex.axis=1.4, cex.lab = 1.8)
+# lines(x = Oxic.X, Oxic.log.fixed, lty = 1)
+# lines(x = Oxic.X, Oxic.log.quants[1,], lty = 2)
+# lines(x = Oxic.X, Oxic.log.quants[2,], lty = 2)
+# 
+# plot(Oxic.Y ~ Oxic.X, las = 1, ylim = c(0.04, 0.25),
+#      ylab = "", xlab = "", yaxt = "n",
+#      cex = 1.8, cex.axis=1.4, cex.lab = 1.8)
+# lines(x = Oxic.X, Oxic.exp.fixed, lty = 1)
+# lines(x = Oxic.X, Oxic.exp.quants[1,], lty = 2)
+# lines(x = Oxic.X, Oxic.exp.quants[2,], lty = 2)
+# 
+# curve()
+# 
+# dev.off()
+# }
 
+
+{
+  pdf("./Output/Figure S3 - All cases - Monte.pdf", width = 9, height = 6)
+  par(mfrow=c(2,3))
+  par(mar=c(4,5,1,1)+.1)
+  plot(Ar.Jz.day.2018.lin ~ Jz.mat[, 6], las = 1,
+       xlab = "",
+       ylab = expression(Jz~(mg~O[2]~L^-1~d^-1)),
+       ylim = c(0.04, 0.2), xaxt = "n",
+       cex = 1.8, cex.axis=1.4, cex.lab = 2.4)
+  abline(lm(Ar.Jz.day.2018.lin ~ Jz.mat[, 6]), col = "Blue", lwd = 2)
+  for(i in 1:nrow(matrix.perm)){
+    abline(lm(Ar.Jz.day.2018.lin[matrix.perm[i,]] ~ Jz.mat[matrix.perm[i,], 6]), lty = 1, col = alpha("black", 0.4))
+  }
+  
+  
+  # polygon(x = c(Loggers.X, rev(Loggers.X)), y = c(Loggers.lin.quants[1,], rev(Loggers.lin.quants[2,])),
+  #         col = alpha("black", 0.1), border = NA)
+  
+  plot(Ar.Jz.day.2018.lin ~ Jz.mat[, 6], las = 1,
+       xlab = "",
+       ylab = "", yaxt = "n",xaxt = "n",
+       ylim = c(0.04, 0.2),
+       cex = 1.8, cex.axis=1.4, cex.lab = 2.4)
+  main = nlsLM(Ar.Jz.day.2018.lin ~ b*log10(k*Jz.mat[,6]),
+               start = list(b = 0.08, k = 200))
+  curve(coef(main)[1]*log10(x*coef(main)[2]), add=T, col = "Blue", lwd = 2)
+  for(i in 1:nrow(matrix.perm)){
+    alpha.temp = Jz.mat[matrix.perm[i,],6]
+    Jz.temp = Ar.Jz.day.2018.lin[matrix.perm[i,]]
+    temp = nlsLM(Jz.temp ~ b*log10(k*alpha.temp),
+                 start = list(b = 0.08, k = 200))
+    curve(coef(temp)[1]*log10(x*coef(temp)[2]), add=T, lty = 1, col = alpha("black", 0.4))
+  }
+  
+  
+  # polygon(x = c(Loggers.X, rev(Loggers.X)), y = c(Loggers.log.quants[1,], rev(Loggers.log.quants[2,])),
+  #         col = alpha("black", 0.1), border = NA)
+  
+  plot(Ar.Jz.day.2018.lin ~ Jz.mat[, 6], las = 1,
+       xlab = "",
+       ylab = "", yaxt = "n",xaxt = "n",
+       ylim = c(0.04, 0.2),
+       cex = 1.8, cex.axis=1.4, cex.lab = 2.4)
+  
+  main = nlsLM(Ar.Jz.day.2018.lin ~ j.m - (j.m-b)*exp(-k*Jz.mat[,6]),
+               start = list(j.m = max(Ar.Jz.day.2018.lin), b = 0.2, k = 1))
+  curve(coef(main)[1] - (coef(main)[1] - coef(main)[2]) * exp(-coef(main)[3]*x),
+        add=T, col = "Blue", lwd = 2)
+  
+  for(i in 1:nrow(matrix.perm)){
+    alpha.temp = Jz.mat[matrix.perm[i,],6]
+    Jz.temp = Ar.Jz.day.2018.lin[matrix.perm[i,]]
+    temp = nlsLM(Jz.temp ~ j.m - (j.m-b)*exp(-k*alpha.temp),
+                 start = list(j.m = max(Jz.temp), b = 0.2, k = 1))
+    curve(coef(temp)[1] - (coef(temp)[1] - coef(temp)[2]) * exp(-coef(temp)[3]*x),
+          add=T, lty = 1, col = alpha("black", 0.4))
+  }
+  # polygon(x = c(Loggers.X, rev(Loggers.X)), y = c(Loggers.exp.quants[1,], rev(Loggers.exp.quants[2,])),
+  #         col = alpha("black", 0.1), border = NA)
+  
+  #2 oxic profiles
+  plot(Jz.lowres.slice.list[[2]][,1] ~ ar.alpha.monte$alpha, las = 1,
+       xlab = expression(alpha(z)),
+       ylab = expression(Jz~(mg~O[2]~L^-1~d^-1)),
+       ylim = c(0.04, 0.2),
+       cex = 1.8, cex.axis=1.4, cex.lab = 2.4)
+  abline(Ar.Jz.lm.best.list[[2]][[1]], col = "Blue", lwd = 2)
+  
+  for(i in 1:ncol(Jz.lowres.monte)){
+    abline(lm(Jz.lowres.monte[,i] ~ ar.alpha.monte$alpha), lty = 1, col = alpha("black", 0.4))
+  }
+  
+  # polygon(x = c(Oxic.X, rev(Oxic.X)), y = c(Oxic.lin.quants[1,], rev(Oxic.lin.quants[2,])),
+  #         col = alpha("black", 0.1), border = NA)
+  
+  plot(Jz.lowres.slice.list[[2]][,1] ~ ar.alpha.monte$alpha, las = 1,
+       xlab = expression(alpha(z)),
+       ylab = "", yaxt = "n",
+       ylim = c(0.04, 0.2),
+       cex = 1.8, cex.axis=1.4, cex.lab = 2.4)
+  Jz.temp = Jz.lowres.slice.list[[2]][,1]
+  alpha.temp = ar.alpha.monte$alpha
+  main = nlsLM(Jz.temp ~ b*log10(k*alpha.temp),
+               start = list(b = 0.08, k = 200))
+  curve(coef(main)[1]*log10(x*coef(main)[2]), add=T, col = "Blue", lwd = 2)
+  
+  for(i in 1:ncol(Jz.lowres.monte)){
+    Jz.temp = Jz.lowres.monte[,i]
+    temp = nlsLM(Jz.temp ~ b*log10(k*alpha.temp),
+                 start = list(b = 0.08, k = 200))
+    curve(coef(temp)[1]*log10(x*coef(temp)[2]), add=T, lty = 1, col = alpha("black", 0.4))
+  }
+  
+  # polygon(x = c(Oxic.X, rev(Oxic.X)), y = c(Oxic.log.quants[1,], rev(Oxic.log.quants[2,])),
+  #         col = alpha("black", 0.1), border = NA)
+  
+  plot(Jz.lowres.slice.list[[2]][,1] ~ ar.alpha.monte$alpha, las = 1,
+       xlab = expression(alpha(z)),
+       ylab = "", yaxt = "n",
+       ylim = c(0.04, 0.2),
+       cex = 1.8, cex.axis=1.4, cex.lab = 2.4)
+  Jz.temp = Jz.lowres.slice.list[[2]][,1]
+  
+  main = nlsLM(Jz.temp ~ j.m - (j.m-b)*exp(-k*alpha.temp),
+               start = list(j.m = max(Ar.Jz.day.2018.lin), b = 0.2, k = 1))
+  curve(coef(main)[1] - (coef(main)[1] - coef(main)[2]) * exp(-coef(main)[3]*x),
+        add=T, col = "Blue", lwd = 2)
+  
+  for(i in 1:ncol(Jz.lowres.monte)){
+    Jz.temp = Jz.lowres.monte[,i]
+    temp = nlsLM(Jz.temp ~ j.m - (j.m-b)*exp(-k*alpha.temp),
+                 start = list(j.m = max(Jz.temp), b = 0.2, k = 1))
+    curve(coef(temp)[1] - (coef(temp)[1] - coef(temp)[2]) * exp(-coef(temp)[3]*x),
+          add=T, lty = 1, col = alpha("black", 0.4))
+  }
+  
+  # polygon(x = c(Oxic.X, rev(Oxic.X)), y = c(Oxic.exp.quants[1,], rev(Oxic.exp.quants[2,])),
+  #         col = alpha("black", 0.1), border = NA)
+  
+  dev.off()
+}
 
 source("./Scripts/O2_DecayRate.R")
 
@@ -2775,7 +3143,7 @@ First.DOY.all = rbind(First.2017.all, First.2018.all, First.2019.all, First.2020
 #2017
 {
   #jpeg("./Output/AA.DOY.Obs-Mod-2017.jpg", height=8, width=8, res = 300, units="in")
-  pdf("./Output/AA.DOY.Obs-Mod-2017.pdf", height=8, width=8)
+  pdf("./Output/FigS6-FirstDayAnoxia2017.pdf", height=8, width=8)
   par(mfrow=c(3,3))
   par(mar=c(4,5,1,0.5)+.1)
   for(i in 2:nrow(First.2017.all)){
@@ -2783,7 +3151,7 @@ First.DOY.all = rbind(First.2017.all, First.2018.all, First.2019.all, First.2020
       plot(First.2017.all[1,] ~ First.2017.all[i,],
            xlab = "",
            xlim = c(180,350),
-           ylab = "First day of hypoxia (observed)",
+           ylab = "First day of anoxia (observed)",
            xaxt = "n",
            las = 1, cex = 1.8,cex.axis=1.3, cex.lab = 1.4,
            main = c("Linear model"))
@@ -2805,7 +3173,7 @@ First.DOY.all = rbind(First.2017.all, First.2018.all, First.2019.all, First.2020
       plot(First.2017.all[1,] ~ First.2017.all[i,],
            xlab = "",
            xlim = c(180,350),
-           ylab = "First day of hypoxia (observed)",
+           ylab = "First day of anoxia (observed)",
            xaxt = "n",
            las = 1,cex = 1.8,cex.axis=1.3, cex.lab = 1.4,
            main = "")
@@ -2827,8 +3195,8 @@ First.DOY.all = rbind(First.2017.all, First.2018.all, First.2019.all, First.2020
     if(i == 8){
       plot(First.2017.all[1,] ~ First.2017.all[i,],
            xlim = c(180,350),
-           xlab = "First day of hypoxia (modelled)",
-           ylab = "First day of hypoxia (observed)",
+           xlab = "First day of anoxia (modelled)",
+           ylab = "First day of anoxia (observed)",
            las = 1,cex = 1.8,cex.axis=1.3, cex.lab = 1.4,
            main = "")
       abline(0,1)
@@ -2836,7 +3204,7 @@ First.DOY.all = rbind(First.2017.all, First.2018.all, First.2019.all, First.2020
     if(i == 9| i == 10){
       plot(First.2017.all[1,] ~ First.2017.all[i,],
            xlim = c(180,350),
-           xlab = "First day of hypoxia (modelled)",
+           xlab = "First day of anoxia (modelled)",
            ylab = "",
            yaxt = "n",
            las = 1,cex = 1.8, cex.axis=1.3, cex.lab = 1.4,
@@ -2851,7 +3219,7 @@ First.DOY.all = rbind(First.2017.all, First.2018.all, First.2019.all, First.2020
 #2018
 {
   #jpeg("./Output/AA.DOY.Obs-Mod-2018.jpg", height=8, width=8, res = 300, units="in")
-  pdf("./Output/AA.DOY.Obs-Mod-2018.pdf", height=8, width=8)
+  pdf("./Output/FigS7-FirstDayAnoxia2018.pdf", height=8, width=8)
   par(mfrow=c(3,3))
   par(mar=c(4,5,1,0.5)+.1)
   for(i in 2:nrow(First.2018.all)){
@@ -2859,7 +3227,7 @@ First.DOY.all = rbind(First.2017.all, First.2018.all, First.2019.all, First.2020
       plot(First.2018.all[1,] ~ First.2018.all[i,],
            xlab = "",
            xlim = c(190,350),
-           ylab = "First day of hypoxia (observed)",
+           ylab = "First day of anoxia (observed)",
            xaxt = "n",
            las = 1, cex = 1.8,cex.axis=1.3, cex.lab = 1.4,
            main = c("Linear model"))
@@ -2881,7 +3249,7 @@ First.DOY.all = rbind(First.2017.all, First.2018.all, First.2019.all, First.2020
       plot(First.2018.all[1,] ~ First.2018.all[i,],
            xlab = "",
            xlim = c(190,350),
-           ylab = "First day of hypoxia (observed)",
+           ylab = "First day of anoxia (observed)",
            xaxt = "n",
            las = 1,cex = 1.8,cex.axis=1.3, cex.lab = 1.4,
            main = "")
@@ -2903,8 +3271,8 @@ First.DOY.all = rbind(First.2017.all, First.2018.all, First.2019.all, First.2020
     if(i == 8){
       plot(First.2018.all[1,] ~ First.2018.all[i,],
            xlim = c(190,350),
-           xlab = "First day of hypoxia (modelled)",
-           ylab = "First day of hypoxia (observed)",
+           xlab = "First day of anoxia (modelled)",
+           ylab = "First day of anoxia (observed)",
            las = 1,cex = 1.8,cex.axis=1.3, cex.lab = 1.4,
            main = "")
       abline(0,1)
@@ -2912,7 +3280,7 @@ First.DOY.all = rbind(First.2017.all, First.2018.all, First.2019.all, First.2020
     if(i == 9| i == 10){
       plot(First.2018.all[1,] ~ First.2018.all[i,],
            xlim = c(190,350),
-           xlab = "First day of hypoxia (modelled)",
+           xlab = "First day of anoxia (modelled)",
            ylab = "",
            yaxt = "n",
            las = 1,cex = 1.8, cex.axis=1.3, cex.lab = 1.4,
@@ -2927,7 +3295,7 @@ First.DOY.all = rbind(First.2017.all, First.2018.all, First.2019.all, First.2020
 #2019
 {
   #jpeg("./Output/AA.DOY.Obs-Mod-2019.jpg", height=8, width=8, res = 300, units="in")
-  pdf("./Output/AA.DOY.Obs-Mod-2019.pdf", height=8, width=8)
+  pdf("./Output/Fig4-FirstDayAnoxia2019.pdf", height=8, width=8)
 par(mfrow=c(3,3))
 par(mar=c(4,5,1,0.5)+.1)
 for(i in 2:nrow(First.2019.all)){
@@ -2935,7 +3303,7 @@ for(i in 2:nrow(First.2019.all)){
   plot(First.2019.all[1,] ~ First.2019.all[i,],
        xlab = "",
        xlim = c(190,350),
-       ylab = "First day of hypoxia (observed)",
+       ylab = "First day of anoxia (observed)",
        xaxt = "n",
        las = 1, cex = 1.8,cex.axis=1.3, cex.lab = 1.4,
        main = c("Linear model"))
@@ -2957,7 +3325,7 @@ for(i in 2:nrow(First.2019.all)){
     plot(First.2019.all[1,] ~ First.2019.all[i,],
          xlab = "",
          xlim = c(190,350),
-         ylab = "First day of hypoxia (observed)",
+         ylab = "First day of anoxia (observed)",
          xaxt = "n",
          las = 1,cex = 1.8,cex.axis=1.3, cex.lab = 1.4,
          main = "")
@@ -2979,8 +3347,8 @@ for(i in 2:nrow(First.2019.all)){
   if(i == 8){
     plot(First.2019.all[1,] ~ First.2019.all[i,],
          xlim = c(190,350),
-         xlab = "First day of hypoxia (modelled)",
-         ylab = "First day of hypoxia (observed)",
+         xlab = "First day of anoxia (modelled)",
+         ylab = "First day of anoxia (observed)",
          las = 1,cex = 1.8,cex.axis=1.3, cex.lab = 1.4,
          main = "")
     abline(0,1)
@@ -2988,7 +3356,7 @@ for(i in 2:nrow(First.2019.all)){
     if(i == 9| i == 10){
       plot(First.2019.all[1,] ~ First.2019.all[i,],
            xlim = c(190,350),
-           xlab = "First day of hypoxia (modelled)",
+           xlab = "First day of anoxia (modelled)",
            ylab = "",
            yaxt = "n",
            las = 1,cex = 1.8, cex.axis=1.3, cex.lab = 1.4,
@@ -3003,7 +3371,7 @@ dev.off()
 #2020
 {
   #jpeg("./Output/AA.DOY.Obs-Mod-2020.jpg", height=8, width=8, res = 290, units="in")
-  pdf("./Output/AA.DOY.Obs-Mod-2020.pdf", height=8, width=8)
+  pdf("./Output/FigS8-FirstDayAnoxia2020.pdf", height=8, width=8)
   par(mfrow=c(3,3))
   par(mar=c(4,5,1,0.5)+.1)
   for(i in 2:nrow(First.2020.all)){
@@ -3011,7 +3379,7 @@ dev.off()
       plot(First.2020.all[1,] ~ First.2020.all[i,],
            xlab = "",
            xlim = c(170,290),
-           ylab = "First day of hypoxia (observed)",
+           ylab = "First day of anoxia (observed)",
            xaxt = "n",
            las = 1, cex = 1.8,cex.axis=1.3, cex.lab = 1.4,
            main = c("Linear model"))
@@ -3033,7 +3401,7 @@ dev.off()
       plot(First.2020.all[1,] ~ First.2020.all[i,],
            xlab = "",
            xlim = c(170,290),
-           ylab = "First day of hypoxia (observed)",
+           ylab = "First day of anoxia (observed)",
            xaxt = "n",
            las = 1,cex = 1.8,cex.axis=1.3, cex.lab = 1.4,
            main = "")
@@ -3055,8 +3423,8 @@ dev.off()
     if(i == 8){
       plot(First.2020.all[1,] ~ First.2020.all[i,],
            xlim = c(170,290),
-           xlab = "First day of hypoxia (modelled)",
-           ylab = "First day of hypoxia (observed)",
+           xlab = "First day of anoxia (modelled)",
+           ylab = "First day of anoxia (observed)",
            las = 1,cex = 1.8,cex.axis=1.3, cex.lab = 1.4,
            main = "")
       abline(0,1)
@@ -3064,7 +3432,7 @@ dev.off()
     if(i == 9| i == 10){
       plot(First.2020.all[1,] ~ First.2020.all[i,],
            xlim = c(170,290),
-           xlab = "First day of hypoxia (modelled)",
+           xlab = "First day of anoxia (modelled)",
            ylab = "",
            yaxt = "n",
            las = 1,cex = 1.8, cex.axis=1.3, cex.lab = 1.4,
@@ -3079,7 +3447,7 @@ dev.off()
 #2021
 {
   #jpeg("./Output/AA.DOY.Obs-Mod-2021.jpg", height=8, width=8, res = 290, units="in")
-  pdf("./Output/AA.DOY.Obs-Mod-2021.pdf", height=5.6, width=8)
+  pdf("./Output/FigS9-FirstDayAnoxia2021.pdf", height=5.6, width=8)
   par(mfrow=c(2,3))
   par(mar=c(4,5,1,0.5)+.1)
   for(i in 2:nrow(First.2021.all)){
@@ -3087,7 +3455,7 @@ dev.off()
       plot(First.2021.all[1,] ~ First.2021.all[i,],
            xlab = "",
            xlim = c(170,290),
-           ylab = "First day of hypoxia (observed)",
+           ylab = "First day of anoxia (observed)",
            xaxt = "n",
            las = 1, cex = 1.8,cex.axis=1.3, cex.lab = 1.4,
            main = c("Linear model"))
@@ -3107,9 +3475,9 @@ dev.off()
     }
     if(i == 5){
       plot(First.2021.all[1,] ~ First.2021.all[i,],
-           xlab = "First day of hypoxia (modelled)",
+           xlab = "First day of anoxia (modelled)",
            xlim = c(170,290),
-           ylab = "First day of hypoxia (observed)",
+           ylab = "First day of anoxia (observed)",
            las = 1,cex = 1.8,cex.axis=1.3, cex.lab = 1.4,
            main = "")
       abline(0,1)
@@ -3117,7 +3485,7 @@ dev.off()
     
     if(i == 6 | i== 7){
       plot(First.2021.all[1,] ~ First.2021.all[i,],
-           xlab = "First day of hypoxia (modelled)",
+           xlab = "First day of anoxia (modelled)",
            xlim = c(170,290),
            ylab = "",
            yaxt="n",
@@ -4070,11 +4438,11 @@ dev.off()
 
 
 #Add a column for pch values
-NH4_SRP.data.2017$year = 0
+NH4_SRP.data.2017$year = 1
 NH4_SRP.data.2017$cex = 1
-NH4_SRP.data.2019$year = 1
+NH4_SRP.data.2019$year = 2
 NH4_SRP.data.2019$cex = 2
-NH4_SRP.data.2020$year = 2
+NH4_SRP.data.2020$year = 3
 NH4_SRP.data.2020$cex = 1
 
 
@@ -4093,7 +4461,7 @@ plot(NH4_SRP.data.all$NH4.N_mgL ~ NH4_SRP.data.all$AnoxA,
      xlab = "Anoxic age (days)", pch = NH4_SRP.data.all$year)
 
 #Test without anoxic age = 0
-pdf("./Output/Fig. X, Nutrients-AA.pdf", width=8, height=4)
+pdf("./Output/Fig. 1, Nutrients-AA, no boxplot.pdf", width=8, height=4)
 par(mfrow=c(1,2))
 par(mar=c(4,5,1,2)+0.1)
 plot(NH4_SRP.data.all$SRP_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.all$AnoxA[NH4_SRP.data.all$AnoxA!=0],
@@ -4101,22 +4469,25 @@ plot(NH4_SRP.data.all$SRP_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.all$Anox
      ylim = c(0.1,0.36),
      ylab = expression(SRP~(mg~L^-1)),
      xlab = "Anoxic age (days)",
-     pch = NH4_SRP.data.all$year[NH4_SRP.data.all$AnoxA!=0],
+     pch = c(15,16,17)[NH4_SRP.data.all$year[NH4_SRP.data.all$AnoxA!=0]],
+     col = c("#73BAE6","#C7144C", "#33A02C")[NH4_SRP.data.all$year[NH4_SRP.data.all$AnoxA!=0]],
      cex = NH4_SRP.data.all$cex[NH4_SRP.data.all$AnoxA!=0])
 legend("bottomright",
-       pch = c(0,1,2),
+       pch = c(22,21,24),
        pt.cex = c(1,2,1),
-       legend = c("2017", "2019","2020"))
+       legend = c("2017", "2019","2020"),
+       pt.bg = c("#73BAE6","#C7144C", "#33A02C"))
 plot(NH4_SRP.data.all$NH4.N_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.all$AnoxA[NH4_SRP.data.all$AnoxA!=0],
      las = 1,
      ylim = c(0,1.1),
      ylab = expression(NH[4]^"+"~(mg~L^-1)),
      xlab = "Anoxic age (days)",
-     pch = NH4_SRP.data.all$year[NH4_SRP.data.all$AnoxA!=0],
+     pch = c(15,16,17)[NH4_SRP.data.all$year[NH4_SRP.data.all$AnoxA!=0]],
+     col = c("#73BAE6","#C7144C", "#33A02C")[NH4_SRP.data.all$year[NH4_SRP.data.all$AnoxA!=0]],
      cex = NH4_SRP.data.all$cex[NH4_SRP.data.all$AnoxA!=0])
 dev.off()
 
-pdf("./Output/Fig. X, Nutrients-AA.Boxplot.pdf", width=8, height=4)
+pdf("./Output/Fig. 1, Nutrients-AA.Boxplot.pdf", width=8, height=4)
 par(mfrow=c(1,2))
 par(mar=c(4,5,1,2)+0.1)
 boxplot(NH4_SRP.data.all$SRP_mgL[NH4_SRP.data.all$AnoxA==0] ~ NH4_SRP.data.all$AnoxA[NH4_SRP.data.all$AnoxA==0],

@@ -7,7 +7,7 @@ interpolation_fct <- function(Input_matrix){
   colnames(matrix_result) = total_range
   
   for(i in 1:(length(total_range))){
-    if(length(grep(colnames(matrix_result)[i], x = colnames(Input_matrix)))) matrix_result[,i] = Input_matrix[,grep(colnames(matrix_result)[i], x = colnames(Input_matrix))[1]]
+    if(length(grep(paste0("^",colnames(matrix_result)[i],"$"), x = colnames(Input_matrix)))) matrix_result[,i] = Input_matrix[,grep(colnames(matrix_result)[i], x = colnames(Input_matrix))[1]]
   }
   
   counter = 0
