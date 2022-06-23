@@ -1770,36 +1770,35 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1])
   dev.off()
 }
 
-{
-  pdf("./Output/Fig.SX Ar.Jz-Alpha.BestLowRes.48m.pdf", width = 5, height = 5)
-  par(mar = c(5,5,4,2)+0.2)
-  plot(Jz.lowres.slice.list[[1]] ~ ar.alpha.list[[1]][,1],
-       las = 1,
-       xlim = c(0,0.50),
-       ylim = c(0.05, 0.15),
-       xlab = expression(alpha(z)),
-       ylab = expression(J[z]~(mg~O[2]~L^-1~d^-1)),
-       main = "",
-       pch = 16, col = "black")
-  abline(Ar.Jz.lm.best.list[[1]][[1]], col = "black")
-  
-  curve(coef(Ar.Jz.lm.best.list[[1]][[3]])[1] - (coef(Ar.Jz.lm.best.list[[1]][[3]])[1] - 
-                                                   coef(Ar.Jz.lm.best.list[[1]][[3]])[2])*
-          exp(-1*coef(Ar.Jz.lm.best.list[[1]][[3]])[3]*x), 
-        add=T, col = "black", lty = 2)
-  
-  legend("topleft", legend = c("Linear fit", "exponential plateau fit"),
-         text.col = c("black","black"), lty = c(1,2))
-  dev.off()
-}
+# {
+#   pdf("./Output/Fig.SX Ar.Jz-Alpha.BestLowRes.48m.pdf", width = 5, height = 5)
+#   par(mar = c(5,5,4,2)+0.2)
+#   plot(Jz.lowres.slice.list[[1]] ~ ar.alpha.list[[1]][,1],
+#        las = 1,
+#        xlim = c(0,0.50),
+#        ylim = c(0.05, 0.15),
+#        xlab = expression(alpha(z)),
+#        ylab = expression(J[z]~(mg~O[2]~L^-1~d^-1)),
+#        main = "",
+#        pch = 16, col = "black")
+#   abline(Ar.Jz.lm.best.list[[1]][[1]], col = "black")
+#   
+#   curve(coef(Ar.Jz.lm.best.list[[1]][[3]])[1] - (coef(Ar.Jz.lm.best.list[[1]][[3]])[1] - 
+#                                                    coef(Ar.Jz.lm.best.list[[1]][[3]])[2])*
+#           exp(-1*coef(Ar.Jz.lm.best.list[[1]][[3]])[3]*x), 
+#         add=T, col = "black", lty = 2)
+#   
+#   legend("topleft", legend = c("Linear fit", "exponential plateau fit"),
+#          text.col = c("black","black"), lty = c(1,2))
+#   dev.off()
+# }
 
 
 #Print Figure 3 (YSI, loggers and 2 casts) in a single plot
-
 {
-  pdf("./Output/Figure3.pdf", width = 9, height = 9)
+  pdf("./Output/Figure3.pdf", width = 4.5, height = 4)
   par(mfrow=c(3,3))
-  par(mar = c(5,5.5,4,2)+0.2)
+  par(mar=c(4,5,1,1)+.1)
   ############################################Loggers########################################
   plot(Ar.Jz.day.2017.lin ~ Jz.mat[, 6], las =1,
        # xlab = expression(alpha(z)),
@@ -1807,7 +1806,7 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1])
        xaxt = "n",
        xlim = c(0,0.25),
        ylab = "",#expression(J[z]~(mg~O[2]~L^-1~d^-1)),
-       ylim = c(0.04, 0.25),cex = 1.8, cex.axis=1.4, cex.lab = 1.8,cex.main = 1.6,
+       ylim = c(0.04, 0.25),cex = 1.8, cex.axis=0.9, cex.lab = 0.8,cex.main = 1.2,
        main = "Linear", col ="blue",pch=16)
   # abline(lm(Ar.Jz.2017 ~ Jz.mat[, 6]), col ="blue", lty =2)
   points(Ar.Jz.day.2018.lin ~ Jz.mat[, 6], col ="chartreuse3",pch=16,cex = 1.8)
@@ -1828,7 +1827,7 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1])
        xaxt = "n",
        yaxt = "n",
        xlim = c(0,0.25),
-       ylim = c(0.04, 0.25),cex = 1.8, cex.axis=1.4, cex.lab = 1.8,cex.main = 1.6,
+       ylim = c(0.04, 0.25),cex = 1.8, cex.axis=0.9, cex.lab = 0.8,cex.main = 1.2,
        main = "Log-linear", col ="blue",pch=16)
   curve(coef(Ar.Living.2017.day.lin.log )[1]*log10(x*coef(Ar.Living.2017.day.lin.log)[2]),
         add=T, col ="blue", lty = 2)
@@ -1854,7 +1853,7 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1])
        xaxt = "n",
        yaxt = "n",
        xlim = c(0,0.25),
-       ylim = c(0.04, 0.25),cex = 1.8, cex.axis=1.4, cex.lab = 1.8,cex.main = 1.6,
+       ylim = c(0.04, 0.25),cex = 1.8, cex.axis=0.9, cex.lab = 0.8,cex.main = 1.2,
        main = "Exponential plateau", col ="blue",pch=16)
   curve(coef(Ar.Living.2017.day.lin.exp )[1] - (coef(Ar.Living.2017.day.lin.exp )[1] - coef(Ar.Living.2017.day.lin.exp )[2])*
           exp(-coef(Ar.Living.2017.day.lin.exp )[3]*x),
@@ -1884,7 +1883,7 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1])
        xlab = "",
        # xlab = expression(alpha(z)),
        ylab = expression(J[z]~(mg~O[2]~L^-1~d^-1)),
-       main = "",cex = 1.8, cex.axis=1.4, cex.lab = 2.4,
+       main = "",cex = 1.8, cex.axis=0.9, cex.lab = 0.8,cex.main = 1.2,
        pch = 16, col = "chartreuse3")
   abline(Ar.Jz.alpha.YSI.2018, col = "chartreuse3", lty = 2)
   points(Jz.YSI.list[[1]][-c(1:3)] ~ alpha.YSI.list[[1]][,1],
@@ -1899,8 +1898,8 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1])
   points(Jz.YSI.list[[5]] ~ alpha.YSI.list[[2]][,1],
          pch = 16, col = "#73BAE6",cex = 1.8)
   abline(Ar.Jz.alpha.YSI.2021, col = "#73BAE6", lty = 2)
-  legend("topleft", legend = c("2017","2018","2019","2020", "2021"),
-         text.col = c("blue","chartreuse3","red","pink", "#73BAE6"))
+  # legend("topleft", legend = c("2017","2018","2019","2020", "2021"),
+  #        text.col = c("blue","chartreuse3","red","pink", "#73BAE6"))
   
   
   plot(Jz.YSI.list[[2]] ~ alpha.YSI.list[[2]][,1],
@@ -1913,7 +1912,7 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1])
        xlab = "",
        # xlab = expression(alpha(z)),
        # ylab = expression(J[z]~(mg~O[2]~L^-1~d^-1)),
-       main = "",cex = 1.8, cex.axis=1.4, cex.lab = 1.8,
+       main = "",cex = 1.8, cex.axis=0.9, cex.lab = 0.8,cex.main = 1.2,
        pch = 16, col = "chartreuse3")
   # curve(coef(Ar.Jz.alpha.YSI.2018.log)[1]*log10(x*coef(Ar.Jz.alpha.YSI.2018.log)[2]),
   #       add=T, col ="chartreuse3")
@@ -1944,7 +1943,7 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1])
        xlab = "",
        # xlab = expression(alpha(z)),
        # ylab = expression(J[z]~(mg~O[2]~L^-1~d^-1)),
-       main = "",cex = 1.8, cex.axis=1.5, cex.lab = 1.8,
+       main = "",cex = 1.8, cex.axis=0.9, cex.lab = 0.8,cex.main = 1.2,
        pch = 16, col = "chartreuse3")
   
   curve(coef(Ar.Jz.alpha.YSI.2018.exp)[1] - (coef(Ar.Jz.alpha.YSI.2018.exp)[1] - 
@@ -1984,15 +1983,15 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1])
   plot(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1],
        las = 1,
        xlim = c(0,0.25),
-       ylim = c(0.05, 0.35),
+       ylim = c(0.05, 0.2),
        xlab = "",
        ylab = "",#expression(J[z]~(mg~O[2]~L^-1~d^-1)),
-       main = "",cex = 1.8, cex.axis=1.4, cex.lab = 1.8,
+       main = "",cex = 1.8, cex.axis=0.9, cex.lab = 0.8,cex.main = 1.2,
        pch = 16, col = "blue")
   # abline(best.2017.short.lm, col = "blue")
   points(Jz.lowres.slice.list[[2]][,1] ~ ar.alpha.list[[2]][,1],
          pch = 16, cex = 1.8,col = "chartreuse3")
-  # abline(Ar.Jz.lm.best.list[[2]][[1]], col = "chartreuse3")
+  abline(Ar.Jz.lm.best.list[[2]][[1]], col = "chartreuse3")
   points(Jz.lowres.slice.list[[3]][,1] ~ ar.alpha.list[[3]][,1],
          pch = 16, cex = 1.8,col = "red")
   # abline(Ar.Jz.lm.best.list[[3]][[1]], col = "red")
@@ -2006,17 +2005,17 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1])
   plot(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1],
        las = 1,
        xlim = c(0,0.25),
-       ylim = c(0.05, 0.35),
+       ylim = c(0.05, 0.2),
        xlab = expression(alpha(z)),
        ylab = "",
-       yaxt = "n",cex = 1.8, cex.axis=1.4, cex.lab = 2.4,
+       yaxt = "n",cex = 1.8, cex.axis=0.9, cex.lab = 0.8,cex.main = 1.2,
        pch = 16, col = "blue")
   curve(coef(Ar.Jz.lm.best.list[[1]][[2]])[1]*log10(x*coef(Ar.Jz.lm.best.list[[1]][[2]])[2]),
          add=T, col ="blue", lty = 2)
   points(Jz.lowres.slice.list[[2]][,1] ~ ar.alpha.list[[2]][,1],
          pch = 16, cex = 1.8,col = "chartreuse3")
-  curve(coef(Ar.Jz.lm.best.list[[2]][[2]])[1]*log10(x*coef(Ar.Jz.lm.best.list[[2]][[2]])[2]),
-        add=T, col ="chartreuse3", lty = 2)
+  # curve(coef(Ar.Jz.lm.best.list[[2]][[2]])[1]*log10(x*coef(Ar.Jz.lm.best.list[[2]][[2]])[2]),
+  #       add=T, col ="chartreuse3", lty = 2)
   points(Jz.lowres.slice.list[[3]][,1] ~ ar.alpha.list[[2]][,1],
          pch = 16, cex = 1.8,col = "red")
   curve(coef(Ar.Jz.lm.best.list[[3]][[2]])[1]*log10(x*coef(Ar.Jz.lm.best.list[[3]][[2]])[2]),
@@ -2024,7 +2023,7 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1])
   points(Jz.lowres.slice.list[[4]][,1] ~ ar.alpha.list[[2]][,1],
          pch = 16, cex = 1.8,col = "pink")
   curve(coef(Ar.Jz.lm.best.list[[4]][[2]])[1]*log10(x*coef(Ar.Jz.lm.best.list[[4]][[2]])[2]),
-        add=T, col ="pink", lty = 2)
+        add=T, col ="pink")
   points(Jz.lowres.slice.list[[5]][,1] ~ ar.alpha.list[[5]][,1],
          pch = 16, cex = 1.8,col = "#00B0F0")
   # curve(coef(Ar.Jz.lm.best.list[[5]][[2]])[1]*log10(x*coef(Ar.Jz.lm.best.list[[5]][[2]])[2]),
@@ -2033,10 +2032,10 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1])
   plot(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1],
        las = 1,
        xlim = c(0,0.25),
-       ylim = c(0.05, 0.35),
+       ylim = c(0.05, 0.2),
        xlab = "",
        ylab = "",
-       yaxt = "n",cex = 1.8, cex.axis=1.4, cex.lab = 1.8,
+       yaxt = "n",cex = 1.8, cex.axis=0.9, cex.lab = 0.8,cex.main = 1.2,
        pch = 16, col = "blue")
   curve(coef(Ar.Jz.lm.best.list[[1]][[3]])[1] - (coef(Ar.Jz.lm.best.list[[1]][[3]])[1] - 
                                                    coef(Ar.Jz.lm.best.list[[1]][[3]])[2])*
@@ -2071,206 +2070,92 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1])
 }
 
 
-# #Monte Carlo simulations for SI
-# Loggers.Y = Ar.Jz.day.2018.lin  #Calculated Jz
-# Loggers.X = Jz.mat[, 6] #alpha(z)
-# 
-# #Set parameters
-# Loggers.lin.a <- coef(lm(Ar.Jz.day.2018.lin ~ Jz.mat[, 6]))[1]
-# Loggers.lin.b <- coef(lm(Ar.Jz.day.2018.lin ~ Jz.mat[, 6]))[2]
-# Loggers.lin.fixed = Loggers.lin.a + Loggers.lin.b * Loggers.X
-# #Simulate 10000 datasets
-# Loggers.Jz.sd = c(0.0008,0.0004,0.0007,0.0042,0.0046) * sqrt(c(210,152,194,102,85)) #Values taken from table S2 * sqrt(N) to calculate back sd
-# Loggers.lin.sim <- replicate(n = 10000, rnorm(n = length(Loggers.X), mean = Loggers.lin.fixed, sd = Loggers.Jz.sd))
-# 
-# apply(X = Loggers.lin.sim , MARGIN = 1, FUN = mean) #Close to "fixed"
-# apply(X = Loggers.lin.sim , MARGIN = 1, FUN = sd) #Close to sd
-# sd(apply(X = Loggers.lin.sim , MARGIN = 1, FUN = mean)) #How close are simulations
-# 
-# #Find 10% and 90% quantiles
-# Loggers.lin.quants = apply(Loggers.lin.sim, 1, function(x) quantile(x, c(0.1, 0.9)))
-# 
-# 
-# #Log-linear
-# Loggers.log.b = coef(Ar.Living.2018.day.lin.log )[1]
-# Loggers.log.k = coef(Ar.Living.2018.day.lin.log )[2]
-# Loggers.log.fixed = Loggers.log.b * log10(Loggers.X*Loggers.log.k)
-# #Simulate 10000 datasets
-# Loggers.log.sim <- replicate(n = 10000, rnorm(n = length(Loggers.X), mean = Loggers.log.fixed, sd = Loggers.Jz.sd)) #sd comes from the lm function
-# 
-# apply(X = Loggers.log.sim , MARGIN = 1, FUN = mean) #Close to "fixed"
-# apply(X = Loggers.log.sim , MARGIN = 1, FUN = sd) #Close to sd
-# sd(apply(X = Loggers.log.sim , MARGIN = 1, FUN = mean)) #How close are simulations
-# 
-# #Find 10% and 90% quantiles
-# Loggers.log.quants = apply(Loggers.log.sim, 1, function(x) quantile(x, c(0.1, 0.9)))
-#   
-# #Exponential plateau
-# Loggers.exp.jm = coef(Ar.Living.2018.day.lin.exp)[1]
-# Loggers.exp.b = coef(Ar.Living.2018.day.lin.exp)[2]
-# Loggers.exp.k = coef(Ar.Living.2018.day.lin.exp)[3]
-# Loggers.exp.fixed = Loggers.exp.jm - (Loggers.exp.jm-Loggers.exp.b) * exp(-1*coef(Ar.Living.2018.day.lin.exp)[3]*Loggers.X)
-# #Simulate 10000 datasets
-# Loggers.exp.sim <- replicate(n = 10000, rnorm(n = length(Loggers.X), mean = Loggers.exp.fixed, sd = Loggers.Jz.sd)) #sd comes from the lm function
-# 
-# apply(X = Loggers.exp.sim , MARGIN = 1, FUN = mean) #Close to "fixed"
-# apply(X = Loggers.exp.sim , MARGIN = 1, FUN = sd) #Close to sd
-# sd(apply(X = Loggers.exp.sim , MARGIN = 1, FUN = mean)) #How close are simulations
-# 
-# #Find 10% and 90% quantiles
-# Loggers.exp.quants = apply(Loggers.exp.sim, 1, function(x) quantile(x, c(0.1, 0.9)))
-# 
-# ##########################With casts#####################################
-# YSI.Y = Jz.YSI.list[[2]] 
-# YSI.X = alpha.YSI.list[[2]][,1]
-# 
-# YSI.lin.a = coef(Ar.Jz.alpha.YSI.2018)[1]
-# YSI.lin.b = coef(Ar.Jz.alpha.YSI.2018)[2]
-# YSI.lin.fixed = YSI.lin.a + YSI.lin.b*YSI.X
-# #Simulate 10000 datasets
-# YSI.Jz.sd = Jz.YSI.list.err[[2]] * sqrt(c(351,348,365,363,359,364,349,345,346,347,348,286,225,192,173,161,143,118)) #Values taken from table S2 * sqrt(N) to calculate back sd
-# YSI.lin.sim <- replicate(n = 10000, rnorm(n = length(YSI.X), mean = YSI.lin.fixed, sd = YSI.Jz.sd))
-# 
-# #Find 10% and 90% quantiles
-# YSI.lin.quants = apply(YSI.lin.sim, 1, function(x) quantile(x, c(0.1, 0.9)))
-# 
-# #Log-linear
-# YSI.log.b = coef(Ar.Jz.alpha.YSI.2018.log)[1]
-# YSI.log.k = coef(Ar.Jz.alpha.YSI.2018.log)[2]
-# YSI.log.fixed = YSI.log.b * log10(YSI.log.k*YSI.X)
-# #Simulate 10000 datasets
-# YSI.log.sim <- replicate(n = 10000, rnorm(n = length(YSI.X), mean = YSI.log.fixed, sd = YSI.Jz.sd))
-# #Find 10% and 90% quantiles
-# YSI.log.quants = apply(YSI.log.sim, 1, function(x) quantile(x, c(0.1, 0.9)))
-# 
-# #Exponential-plateau
-# YSI.exp.Jm = coef(Ar.Jz.alpha.YSI.2018.exp)[1]
-# YSI.exp.b = coef(Ar.Jz.alpha.YSI.2018.exp)[2]
-# YSI.exp.k = coef(Ar.Jz.alpha.YSI.2018.exp)[3]
-# YSI.exp.fixed = YSI.exp.Jm - (YSI.exp.Jm + YSI.exp.b) * exp(-1*YSI.exp.k*YSI.X)
-# #Simulate 10000 datasets
-# YSI.exp.sim <- replicate(n = 10000, rnorm(n = length(YSI.X), mean = YSI.exp.fixed, sd = YSI.Jz.sd))
-# #Find 10% and 90% quantiles
-# YSI.exp.quants = apply(YSI.exp.sim, 1, function(x) quantile(x, c(0.1, 0.9)))
-# 
-# ###########################2 oxic profiles##############################
-# Oxic.Y = Jz.lowres.slice.list[[2]][,1] 
-# Oxic.X = ar.alpha.list[[2]][,1]
-# 
-# Oxic.lin.a = coef(Ar.Jz.lm.best.list[[2]][[1]])[1]
-# Oxic.lin.b = coef(Ar.Jz.lm.best.list[[2]][[1]])[2]
-# Oxic.lin.fixed = Oxic.lin.a + Oxic.lin.b * Oxic.X
-# 
-# Oxic.Jz.sd = Jz.lowres.slice.list[[2]][,2] * sqrt(c(rep(50,16),49,49))
-#   
-# #Simulate 10000 datasets
-# Oxic.lin.sim <- replicate(n = 10000, rnorm(n = length(Oxic.X), mean = Oxic.lin.fixed, sd = Oxic.Jz.sd))
-# #Find 10% and 90% quantiles
-# Oxic.lin.quants = apply(Oxic.lin.sim, 1, function(x) quantile(x, c(0.1, 0.9)))
-# 
-# #Log-linear
-# Oxic.log.b = coef(Ar.Jz.lm.best.list[[2]][[2]])[1]
-# Oxic.log.k = coef(Ar.Jz.lm.best.list[[2]][[2]])[2]
-# Oxic.log.fixed = Oxic.log.b * log10(Oxic.log.k*Oxic.X)
-# #Simulate 10000 datasets
-# Oxic.log.sim <- replicate(n = 10000, rnorm(n = length(Oxic.X), mean = Oxic.log.fixed, sd = Oxic.Jz.sd))
-# #Find 10% and 90% quantiles
-# Oxic.log.quants = apply(Oxic.log.sim, 1, function(x) quantile(x, c(0.1, 0.9)))
-# 
-# #Exponential-plateau
-# Oxic.exp.Jm = coef(Ar.Jz.lm.best.list[[2]][[3]])[1]
-# Oxic.exp.b = coef(Ar.Jz.lm.best.list[[2]][[3]])[2]
-# Oxic.exp.k = coef(Ar.Jz.lm.best.list[[2]][[3]])[3]
-# Oxic.exp.fixed = Oxic.exp.Jm - (Oxic.exp.Jm-Oxic.exp.b) * exp(-1*Oxic.exp.k*Oxic.X)
-# #Simulate 10000 datasets
-# Oxic.exp.sim <- replicate(n = 10000, rnorm(n = length(Oxic.X), mean = Oxic.exp.fixed, sd = Oxic.Jz.sd))
-# #Find 10% and 90% quantiles
-# Oxic.exp.quants = apply(Oxic.exp.sim, 1, function(x) quantile(x, c(0.1, 0.9)))
+# Figure 5, How good are only 2 profiles
+##########################2 oxic profiles#########################
 
+DOY.ini.monte = 122
+DOY.end.monte = 182
 
-# #Plot results
-# {
-# pdf("./Output/Figure S3 - Monte Carlo.pdf", width = 9, height = 9)
-# par(mfrow=c(3,3))
-# par(mar = c(5,5.5,4,2)+0.2)
-# #Loggers
-# plot(Loggers.Y ~ Loggers.X, las = 1, ylim = c(0.04, 0.25),
-#      ylab = "", xlab = "", xaxt="n",cex = 1.8, cex.axis=1.4, cex.lab = 1.8,cex.main = 1.6,
-#      main = "Linear")
-# lines(x = Loggers.X, Loggers.lin.fixed, lty = 1)
-# lines(x = Loggers.X, Loggers.lin.quants[1,], lty = 2)
-# lines(x = Loggers.X, Loggers.lin.quants[2,], lty = 2)
-# 
-# plot(Loggers.Y ~ Loggers.X, las = 1, ylim = c(0.04, 0.25),
-#      ylab = "", xlab = "", yaxt = "n", xaxt="n",
-#      main = "Log-linear", cex.main = 1.6,cex = 1.8)
-# lines(x = Loggers.X, Loggers.log.fixed, lty = 1)
-# lines(x = Loggers.X, Loggers.log.quants[1,], lty = 2)
-# lines(x = Loggers.X, Loggers.log.quants[2,], lty = 2)
-# 
-# plot(Loggers.Y ~ Loggers.X, las = 1, ylim = c(0.04, 0.25),
-#      ylab = "", xlab = "", yaxt = "n", xaxt="n",
-#      main = "Exponential-plateau", cex.main = 1.6,cex = 1.8)
-# lines(x = Loggers.X, Loggers.exp.fixed, lty = 1)
-# lines(x = Loggers.X, Loggers.exp.quants[1,], lty = 2)
-# lines(x = Loggers.X, Loggers.exp.quants[2,], lty = 2)
-# 
-# #Casts
-# plot(YSI.Y ~ YSI.X, las = 1, ylim = c(0.04, 0.25),
-#      ylab = expression(Jz~(mg~O[2]~L^-1~d^-1)),xlab = "", xaxt="n",
-#      cex = 1.8, cex.axis=1.4, cex.lab = 1.8)
-# lines(x = YSI.X, YSI.lin.fixed, lty = 1)
-# lines(x = YSI.X, YSI.lin.quants[1,], lty = 2)
-# lines(x = YSI.X, YSI.lin.quants[2,], lty = 2)
-# 
-# plot(YSI.Y ~ YSI.X, las = 1, ylim = c(0.04, 0.25),
-#      ylab = "", xlab = "", yaxt = "n", xaxt="n",cex = 1.8)
-# lines(x = YSI.X, YSI.log.fixed, lty = 1)
-# lines(x = YSI.X, YSI.log.quants[1,], lty = 2)
-# lines(x = YSI.X, YSI.log.quants[2,], lty = 2)
-# 
-# plot(YSI.Y ~ YSI.X, las = 1, ylim = c(0.04, 0.25),
-#      ylab = "", xlab = "", yaxt = "n", xaxt="n",cex = 1.8)
-# lines(x = YSI.X, YSI.exp.fixed, lty = 1)
-# lines(x = YSI.X, YSI.exp.quants[1,], lty = 2)
-# lines(x = YSI.X, YSI.exp.quants[2,], lty = 2)
-# 
-# #2 oxic profiles
-# plot(Oxic.Y ~ Oxic.X, las = 1, ylim = c(0.04, 0.25),
-#      ylab = "", xlab = "",cex = 1.8, cex.axis=1.4, cex.lab = 1.8)
-# lines(x = Oxic.X, Oxic.lin.fixed, lty = 1)
-# lines(x = Oxic.X, Oxic.lin.quants[1,], lty = 2)
-# lines(x = Oxic.X, Oxic.lin.quants[2,], lty = 2)
-# 
-# plot(Oxic.Y ~ Oxic.X, las = 1, ylim = c(0.04, 0.25),
-#      ylab = "", xlab = expression(alpha(z)), yaxt = "n",
-#      cex = 1.8, cex.axis=1.4, cex.lab = 1.8)
-# lines(x = Oxic.X, Oxic.log.fixed, lty = 1)
-# lines(x = Oxic.X, Oxic.log.quants[1,], lty = 2)
-# lines(x = Oxic.X, Oxic.log.quants[2,], lty = 2)
-# 
-# plot(Oxic.Y ~ Oxic.X, las = 1, ylim = c(0.04, 0.25),
-#      ylab = "", xlab = "", yaxt = "n",
-#      cex = 1.8, cex.axis=1.4, cex.lab = 1.8)
-# lines(x = Oxic.X, Oxic.exp.fixed, lty = 1)
-# lines(x = Oxic.X, Oxic.exp.quants[1,], lty = 2)
-# lines(x = Oxic.X, Oxic.exp.quants[2,], lty = 2)
-# 
-# curve()
-# 
-# dev.off()
-# }
+#With matching YSI profiles
+YSI.list = list.files("./Data/Raw/Arendsee-cleaned")
+#Keep only csv files
+YSI.list = YSI.list[grep(pattern = ".csv",list.files("./Data/Raw/Arendsee-cleaned"))]
 
+Bats <- read.csv("./Data/Raw/Arendsee.alpha.csv")
+Jz.lowres.slice.list.monte = list()
+ar.alpha.list.monte = list()
 
+Ar.Jz.lm.best.list.monte = list()
+Jz.lowres.monte = list()
+Ar.YSI = read.csv(paste0("./Data/Raw/Arendsee-cleaned/",YSI.list[2]))
+
+#Remove NA at bottom of profiles with niminum value of the profile
+for(j in 1:ncol(Ar.YSI))
 {
-  pdf("./Output/Figure S3 - All cases - Monte.pdf", width = 9, height = 6)
+  if(is.na(Ar.YSI[,j])) Ar.YSI[is.na(Ar.YSI[,j]),j] = min(Ar.YSI[,j], na.rm=T)
+}
+
+#Transform to long format
+Ar.long = pivot_longer(Ar.YSI, cols = 2:ncol(Ar.YSI), names_to = "Date", values_to = "DO_mgL")
+#Split Date into Year, months and day
+Ar.long$Date = substring(Ar.long$Date, 2,20) %>% strptime("%Y.%m.%d.%H.%M.%S")
+
+Ar.long$DOY = as.numeric(strftime(Ar.long$Date, format = "%j"))
+
+Ar.long = Ar.long %>% mutate(Year = substring(Date, 1, 4),
+                             mm = substring(Date, 6, 7),
+                             dd = substring(Date, 9, 10))
+
+#Keep only values below 30 meters to match other methods
+Ar.long.deep = Ar.long[Ar.long$Depth_m>=30,]
+
+#Order the dataframe
+Ar.long.deep = Ar.long.deep[order(Ar.long.deep$Depth_m ,Ar.long.deep$DOY),]
+
+#2 oxic profiles - 28 days apart
+#Keep only profiles within 2 dates
+Ar.long.deep = Ar.long.deep[Ar.long.deep$DOY >= DOY.ini.monte & Ar.long.deep$DOY <= DOY.end.monte,]
+
+#Keep only values higher than 2mgO2/L
+Ar.long.deep = Ar.long.deep[Ar.long.deep$DO_mgL >=2,]
+
+Depths = unique(Ar.long.deep$Depth_m)
+Jz.lowres.monte = matrix(nrow = length(Depths), ncol = 33)
+rownames(Jz.lowres.monte) = Depths
+for(j in 1:length(Depths)){
+  Ar.long.deep.temp = Ar.long.deep[Ar.long.deep$Depth_m == Depths[j],]
+  Ar.long.deep.temp = Ar.long.deep.temp %>% group_by(DOY) %>% summarize(DO_mgL = mean(DO_mgL))
+  
+  #Fill in missing days (linear interpolation)
+  Ar.long.filled = t(Ar.long.deep.temp)
+  colnames(Ar.long.filled) = Ar.long.filled[1,]
+  Ar.long.filled = t(as.matrix(Ar.long.filled[-1,]))
+  Ar.long.filled = interpolation_fct(Ar.long.filled)
+  
+  #Calculate Jz between each pair of points
+  Slope.temp = vector(length=length(Ar.long.filled)-28)
+  for(k in 1:(length(Ar.long.filled)-28)){
+    Slope.temp[k] = (Ar.long.filled[,k]-Ar.long.filled[,k+28])/28
+  }
+  
+  Jz.lowres.monte[j,] = Slope.temp
+  # print(c(length(Slope.temp), Depths[j]))
+}
+
+
+ar.alpha.monte <- Bats%>% slice(30:47) %>% select(alpha)
+
+
+matrix.perm = matrix(c(1,2,3,1,2,4,1,2,5,2,3,4,2,3,5,3,4,5), ncol = 3, byrow = T)
+{
+  pdf("./Output/Figure 5.pdf", width = 4.5, height = 3)
   par(mfrow=c(2,3))
   par(mar=c(4,5,1,1)+.1)
   plot(Ar.Jz.day.2018.lin ~ Jz.mat[, 6], las = 1,
        xlab = "",
        ylab = expression(Jz~(mg~O[2]~L^-1~d^-1)),
        ylim = c(0.04, 0.2), xaxt = "n",
-       cex = 1.8, cex.axis=1.4, cex.lab = 2.4)
+       cex = 1.4, cex.axis=0.8, cex.lab = 0.9)
   abline(lm(Ar.Jz.day.2018.lin ~ Jz.mat[, 6]), col = "Blue", lwd = 2)
   for(i in 1:nrow(matrix.perm)){
     abline(lm(Ar.Jz.day.2018.lin[matrix.perm[i,]] ~ Jz.mat[matrix.perm[i,], 6]), lty = 1, col = alpha("black", 0.4))
@@ -2284,7 +2169,7 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1])
        xlab = "",
        ylab = "", yaxt = "n",xaxt = "n",
        ylim = c(0.04, 0.2),
-       cex = 1.8, cex.axis=1.4, cex.lab = 2.4)
+       cex = 1.4, cex.axis=0.8, cex.lab = 0.9)
   main = nlsLM(Ar.Jz.day.2018.lin ~ b*log10(k*Jz.mat[,6]),
                start = list(b = 0.08, k = 200))
   curve(coef(main)[1]*log10(x*coef(main)[2]), add=T, col = "Blue", lwd = 2)
@@ -2304,7 +2189,7 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1])
        xlab = "",
        ylab = "", yaxt = "n",xaxt = "n",
        ylim = c(0.04, 0.2),
-       cex = 1.8, cex.axis=1.4, cex.lab = 2.4)
+       cex = 1.4, cex.axis=0.8, cex.lab = 0.9)
   
   main = nlsLM(Ar.Jz.day.2018.lin ~ j.m - (j.m-b)*exp(-k*Jz.mat[,6]),
                start = list(j.m = max(Ar.Jz.day.2018.lin), b = 0.2, k = 1))
@@ -2327,7 +2212,7 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1])
        xlab = expression(alpha(z)),
        ylab = expression(Jz~(mg~O[2]~L^-1~d^-1)),
        ylim = c(0.04, 0.2),
-       cex = 1.8, cex.axis=1.4, cex.lab = 2.4)
+       cex = 1.4, cex.axis=0.8, cex.lab = 0.9)
   abline(Ar.Jz.lm.best.list[[2]][[1]], col = "Blue", lwd = 2)
   
   for(i in 1:ncol(Jz.lowres.monte)){
@@ -2341,7 +2226,7 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1])
        xlab = expression(alpha(z)),
        ylab = "", yaxt = "n",
        ylim = c(0.04, 0.2),
-       cex = 1.8, cex.axis=1.4, cex.lab = 2.4)
+       cex = 1.4, cex.axis=0.8, cex.lab = 0.9)
   Jz.temp = Jz.lowres.slice.list[[2]][,1]
   alpha.temp = ar.alpha.monte$alpha
   main = nlsLM(Jz.temp ~ b*log10(k*alpha.temp),
@@ -2362,7 +2247,7 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1])
        xlab = expression(alpha(z)),
        ylab = "", yaxt = "n",
        ylim = c(0.04, 0.2),
-       cex = 1.8, cex.axis=1.4, cex.lab = 2.4)
+       cex = 1.4, cex.axis=0.8, cex.lab = 0.9)
   Jz.temp = Jz.lowres.slice.list[[2]][,1]
   
   main = nlsLM(Jz.temp ~ j.m - (j.m-b)*exp(-k*alpha.temp),
@@ -2373,7 +2258,7 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1])
   for(i in 1:ncol(Jz.lowres.monte)){
     Jz.temp = Jz.lowres.monte[,i]
     temp = nlsLM(Jz.temp ~ j.m - (j.m-b)*exp(-k*alpha.temp),
-                 start = list(j.m = max(Jz.temp), b = 0.2, k = 1))
+                 start = list(j.m = max(Jz.temp), b = 0.3, k = 1))
     curve(coef(temp)[1] - (coef(temp)[1] - coef(temp)[2]) * exp(-coef(temp)[3]*x),
           add=T, lty = 1, col = alpha("black", 0.4))
   }
@@ -2386,31 +2271,31 @@ best.2017.short.lm = lm(Jz.lowres.slice.list[[1]][,1] ~ ar.alpha.list[[1]][,1])
 
 source("./Scripts/O2_DecayRate.R")
 
-#Useful parameters to model O2 profiles and anoxic age
-#Select alpha from 30m to 47m deep
-ar.alpha <- Bats %>% slice(30:47) %>% select(alpha)
-ar.depth = c(30:47)
-
-#Select the matching Chemistry depths and time
-ar.chem <- filter(Chemistry, lake =="ar") %>% filter(depth == 30 | depth == 40 | depth==45 | depth==46 | depth==47 | depth==48)
-
-#In the first visit of 2020, the maximum sampled depth is 48m in the chemistry dataset, but the YSI
-#profile stoped at 47m. I ASSUME here that the 48m is in fact 47m
-ar.chem.1 <- filter(ar.chem, date == "2020-05-26") 
-ar.chem.2 <- filter(ar.chem, date == "2020-08-25")
-
-
-#Calculate mean CO2 and CH4 concentrations
-ar.chem.1.co2 = group_by(ar.chem.1, depth) %>% summarize(CO2 = mean(conc.CO2.corrected))
-ar.chem.1.ch4 = group_by(ar.chem.1, depth) %>% summarize(CH4 = mean(conc.CH4.insitu))
-ar.chem.2.co2 = group_by(ar.chem.2, depth) %>% summarize(CO2 = mean(conc.CO2.corrected))
-ar.chem.2.ch4 = group_by(ar.chem.2, depth) %>% summarize(CH4 = mean(conc.CH4.insitu))
-
-#Remove duplicated lines for other variables
-ar.chem.1.single = ar.chem.1[,-c(42:50)]
-ar.chem.1.single = unique(ar.chem.1.single)
-ar.chem.2.single = ar.chem.2[,-c(42:50)]
-ar.chem.2.single = unique(ar.chem.2.single)
+# #Useful parameters to model O2 profiles and anoxic age
+# #Select alpha from 30m to 47m deep
+# ar.alpha <- Bats %>% slice(30:47) %>% select(alpha)
+# ar.depth = c(30:47)
+# 
+# #Select the matching Chemistry depths and time
+# ar.chem <- filter(Chemistry, lake =="ar") %>% filter(depth == 30 | depth == 40 | depth==45 | depth==46 | depth==47 | depth==48)
+# 
+# #In the first visit of 2020, the maximum sampled depth is 48m in the chemistry dataset, but the YSI
+# #profile stoped at 47m. I ASSUME here that the 48m is in fact 47m
+# ar.chem.1 <- filter(ar.chem, date == "2020-05-26") 
+# ar.chem.2 <- filter(ar.chem, date == "2020-08-25")
+# 
+# 
+# #Calculate mean CO2 and CH4 concentrations
+# ar.chem.1.co2 = group_by(ar.chem.1, depth) %>% summarize(CO2 = mean(conc.CO2.corrected))
+# ar.chem.1.ch4 = group_by(ar.chem.1, depth) %>% summarize(CH4 = mean(conc.CH4.insitu))
+# ar.chem.2.co2 = group_by(ar.chem.2, depth) %>% summarize(CO2 = mean(conc.CO2.corrected))
+# ar.chem.2.ch4 = group_by(ar.chem.2, depth) %>% summarize(CH4 = mean(conc.CH4.insitu))
+# 
+# #Remove duplicated lines for other variables
+# ar.chem.1.single = ar.chem.1[,-c(42:50)]
+# ar.chem.1.single = unique(ar.chem.1.single)
+# ar.chem.2.single = ar.chem.2[,-c(42:50)]
+# ar.chem.2.single = unique(ar.chem.2.single)
 
 #Depth used in 2020
 # aa.depth = c(30,40,45,46,47)
@@ -3295,7 +3180,7 @@ First.DOY.all = rbind(First.2017.all, First.2018.all, First.2019.all, First.2020
 #2019
 {
   #jpeg("./Output/AA.DOY.Obs-Mod-2019.jpg", height=8, width=8, res = 300, units="in")
-  pdf("./Output/Fig4-FirstDayAnoxia2019.pdf", height=8, width=8)
+  pdf("./Output/Fig. 4-FirstDayAnoxia2019.pdf", height=4, width=4)
 par(mfrow=c(3,3))
 par(mar=c(4,5,1,0.5)+.1)
 for(i in 2:nrow(First.2019.all)){
@@ -3303,11 +3188,11 @@ for(i in 2:nrow(First.2019.all)){
   plot(First.2019.all[1,] ~ First.2019.all[i,],
        xlab = "",
        xlim = c(190,350),
-       ylab = "First day of anoxia (observed)",
+       ylab = "",
        xaxt = "n",
-       las = 1, cex = 1.8,cex.axis=1.3, cex.lab = 1.4,
+       las = 1, cex = 1.4, cex.axis=0.8, cex.lab = 0.9,
        main = c("Linear model"))
-    legend("topleft", lty = 1, legend = ("1:1 line"))
+    # legend("topleft", lty = 1, legend = ("1:1 line"))
   abline(0,1)
   }
   if(i == 3 | i ==4){
@@ -3317,17 +3202,18 @@ for(i in 2:nrow(First.2019.all)){
          ylab = "",
          xaxt="n",
          yaxt="n",
-         las = 1,cex = 1.8,cex.axis=1.3, cex.lab = 1.4,
+         las = 1,cex = 1.4, cex.axis=0.8, cex.lab = 0.9,
          main = c("Log-linear model", "Exponential plateau model")[i-2])
     abline(0,1)
   }
+
   if(i == 5){
     plot(First.2019.all[1,] ~ First.2019.all[i,],
          xlab = "",
          xlim = c(190,350),
          ylab = "First day of anoxia (observed)",
          xaxt = "n",
-         las = 1,cex = 1.8,cex.axis=1.3, cex.lab = 1.4,
+         las = 1,cex = 1.4, cex.axis=0.8, cex.lab = 0.9,
          main = "")
     abline(0,1)
   }
@@ -3339,27 +3225,27 @@ for(i in 2:nrow(First.2019.all)){
          ylab = "",
          xaxt="n",
          yaxt="n",
-         las = 1,cex = 1.8,cex.axis=1.3, cex.lab = 1.4,
+         las = 1,cex = 1.4, cex.axis=0.8, cex.lab = 0.9,
          main = "")
     abline(0,1)
   }
   
-  if(i == 8){
+  if(i == 8| i == 10){
     plot(First.2019.all[1,] ~ First.2019.all[i,],
          xlim = c(190,350),
-         xlab = "First day of anoxia (modelled)",
-         ylab = "First day of anoxia (observed)",
-         las = 1,cex = 1.8,cex.axis=1.3, cex.lab = 1.4,
+         xlab = "",
+         ylab = "",
+         las = 1,cex = 1.4, cex.axis=0.8, cex.lab = 0.9,
          main = "")
     abline(0,1)
   }
-    if(i == 9| i == 10){
+    if(i == 9){
       plot(First.2019.all[1,] ~ First.2019.all[i,],
            xlim = c(190,350),
            xlab = "First day of anoxia (modelled)",
            ylab = "",
            yaxt = "n",
-           las = 1,cex = 1.8, cex.axis=1.3, cex.lab = 1.4,
+           las = 1,cex = 1.4, cex.axis=0.8, cex.lab = 0.9,
            main = "")
       abline(0,1)
     }
@@ -3653,6 +3539,7 @@ Combined.aa.2017 = pivot_wider(Combined.long, names_from = DOY, values_from = An
 
 #Subset nutrient data by years
 NH4_SRP.data.2017 = NH4_SRP.data[grep("2017", NH4_SRP.data$Date),]
+NH4_SRP.data.2017[NH4_SRP.data.2017$Depth_m=="48.5", "Depth_m"] = 48
 
 #Match calculated anoxic age with nutrient data
 for(i in 1:nrow(NH4_SRP.data.2017)){
@@ -3665,7 +3552,7 @@ for(i in 1:nrow(NH4_SRP.data.2017)){
 }
 
 #Manually fix anoxic age for 48m deep; at 147DOY, it has been 21 days it is <2
-fix(NH4_SRP.data.2017) #DOY 143 = 17 and DOY 129 = 3
+# fix(NH4_SRP.data.2017) #DOY 143 = 17 and DOY 129 = 3
 
 #Remove early dates (DOY < 120)
 NH4_SRP.data.2017 = NH4_SRP.data.2017[-which(NH4_SRP.data.2017$DOY<120),]
@@ -3985,7 +3872,8 @@ NH4_SRP.data.2018 = NH4_SRP.data.2018[-which(NH4_SRP.data.2018$DOY<120),]
   #Subset nutrient data by years
   NH4_SRP.data.2019 = NH4_SRP.data[grep("2019", NH4_SRP.data$Date),]
   NH4_SRP.data.2019[NH4_SRP.data.2019$Depth_m==47.8,"Depth_m"] = 48
-  NH4_SRP.data.2019[NH4_SRP.data.2019$Depth_m==47.6,"Depth_m"] = 47.5
+  NH4_SRP.data.2019[NH4_SRP.data.2019$Depth_m==47.6,"Depth_m"] = 48
+  NH4_SRP.data.2019[NH4_SRP.data.2019$Depth_m==47.5,"Depth_m"] = 47
   
   #Match calculated anoxic age with nutrient data
   for(i in 1:nrow(NH4_SRP.data.2019)){
@@ -4002,7 +3890,8 @@ NH4_SRP.data.2018 = NH4_SRP.data.2018[-which(NH4_SRP.data.2018$DOY<120),]
  
   #Remove 1 line that looks like an outlier (lowest values for no apparent reason)
   NH4_SRP.data.2019 =  NH4_SRP.data.2019[-which(NH4_SRP.data.2019$SRP_mgL==min(NH4_SRP.data.2019$SRP_mgL)),]
-}
+
+  }
 
 #With 2020
 {#Create new anoxic age vector with higher resolution
@@ -4165,7 +4054,7 @@ NH4_SRP.data.2018 = NH4_SRP.data.2018[-which(NH4_SRP.data.2018$DOY<120),]
   NH4_SRP.data.2020[grep("08-25", NH4_SRP.data.2020$date),"DOY"] = 238
     
   #Change 42.5 by 43m because it makes no difference with anoxic age
-  NH4_SRP.data.2020[NH4_SRP.data.2020$depth==42.5,"depth"] = 43
+  NH4_SRP.data.2020[NH4_SRP.data.2020$depth==42.5,"depth"] = 42
   
   #Add anoxic age column to NH$-SRP table
   NH4_SRP.data.2020$AnoxA = 0
@@ -4341,7 +4230,7 @@ NH4_SRP.data.2018 = NH4_SRP.data.2018[-which(NH4_SRP.data.2018$DOY<120),]
   
   #Create NH4-SRP dataset from yet another campaign file
   NH4_SRP.data.2021 <- data.frame(Date = "27-07-2021",
-                                  Depth_m = c(30,43,45,46,47.5),
+                                  Depth_m = c(30,43,45,46,47),
                                   T_C = NA,
                                   O2_mgL = NA,
                                   SRP_mgL = c(153,266,299,318,326)/1000,
@@ -4360,81 +4249,81 @@ NH4_SRP.data.2018 = NH4_SRP.data.2018[-which(NH4_SRP.data.2018$DOY<120),]
     NH4_SRP.data.2021[i,"AnoxA"] = Combined.long[Combined.long $Depth==NH4_SRP.data.2021[i,"Depth_m"]&
                                                    Combined.long $DOY==NH4_SRP.data.2021[i,"DOY"],"AnoxAge"]
   }
-  
+
   # #Remove 1 line that looks like an outlier (lowest values for no apparent reason)
   # NH4_SRP.data.2020 =  NH4_SRP.data.2020[-which(NH4_SRP.data.2020$SRP_mgL==min(NH4_SRP.data.2020$SRP_mgL)),]
 }
 
-#plot results
-pdf("./Exploration output/NH4-SRP_2017.pdf", width=8, height=4)
-par(mfrow=c(1,2))
-par(mar=c(4,5,2,1)+.1)
-plot(NH4_SRP.data.2017$SRP_mgL ~ NH4_SRP.data.2017$AnoxA,
-     las = 1,
-     ylab = expression(SRP~(mgL^-1)),
-     xlab = "Anoxic age (days)")
-plot(NH4_SRP.data.2017$NH4.N_mgL ~ NH4_SRP.data.2017$AnoxA,
-     las = 1,
-     ylab = expression(NH[4]^"+"~(mg~L^-1)),
-     xlab = "Anoxic age (days)")
-dev.off()
-
-pdf("./Exploration output/NH4-SRP_2018.pdf", width=8, height=4)
-par(mfrow=c(1,2))
-par(mar=c(4,5,2,1)+.1)
-plot(NH4_SRP.data.2018$SRP_mgL ~ NH4_SRP.data.2018$AnoxA,
-     las = 1,
-     ylab = expression(SRP~(mgL^-1)),
-     xlab = "Anoxic age (days)",
-     pch = 16,
-     col = c("#73BAE6","#C7144C","#33A02C","#FFD700","#C742B5")[as.numeric(as.factor(NH4_SRP.data.2018$Depth_m))])
-plot(NH4_SRP.data.2018$NH4.N_mgL ~ NH4_SRP.data.2018$AnoxA,
-     las = 1,
-     ylab = expression(NH[4]^"+"~(mg~L^-1)),
-     xlab = "Anoxic age (days)",
-     pch = 16,
-     col = c("#73BAE6","#C7144C","#33A02C","#FFD700","#C742B5")[as.numeric(as.factor(NH4_SRP.data.2018$Depth_m))])
-dev.off()
-
-pdf("./Exploration output/NH4-SRP_2019.pdf", width=8, height=4)
-par(mfrow=c(1,2))
-par(mar=c(4,5,2,1)+.1)
-plot(NH4_SRP.data.2019$SRP_mgL ~ NH4_SRP.data.2019$AnoxA,
-     las = 1,
-     ylab = expression(SRP~(mgL^-1)),
-     xlab = "Anoxic age (days)")
-plot(NH4_SRP.data.2019$NH4.N_mgL ~ NH4_SRP.data.2019$AnoxA,
-     las = 1,
-     ylab = expression(NH[4]^"+"~(mg~L^-1)),
-     xlab = "Anoxic age (days)")
-dev.off()
-
-pdf("./Exploration output/NH4-SRP_2020.pdf", width=8, height=4)
-par(mfrow=c(1,2))
-par(mar=c(4,5,2,1)+.1)
-plot(NH4_SRP.data.2020$SRP_mgL ~ NH4_SRP.data.2020$AnoxA,
-     las = 1,
-     ylab = expression(SRP~(mgL^-1)),
-     xlab = "Anoxic age (days)")
-plot(NH4_SRP.data.2020$NH4.N_mgL ~ NH4_SRP.data.2020$AnoxA,
-     las = 1,
-     ylab = expression(NH[4]^"+"~(mg~L^-1)),
-     xlab = "Anoxic age (days)")
-dev.off()
-
-
-pdf("./Exploration output/NH4-SRP_2021.pdf", width=8, height=4)
-par(mfrow=c(1,2))
-par(mar=c(4,5,2,1)+.1)
-plot(NH4_SRP.data.2021$SRP_mgL ~ NH4_SRP.data.2021$AnoxA,
-     las = 1,
-     ylab = expression(SRP~(mgL^-1)),
-     xlab = "Anoxic age (days)")
-plot(NH4_SRP.data.2021$NH4.N_mgL ~ NH4_SRP.data.2021$AnoxA,
-     las = 1,
-     ylab = expression(NH[4]^"+"~(mg~L^-1)),
-     xlab = "Anoxic age (days)")
-dev.off()
+# #plot results
+# pdf("./Exploration output/NH4-SRP_2017.pdf", width=8, height=4)
+# par(mfrow=c(1,2))
+# par(mar=c(4,5,2,1)+.1)
+# plot(NH4_SRP.data.2017$SRP_mgL ~ NH4_SRP.data.2017$AnoxA,
+#      las = 1,
+#      ylab = expression(SRP~(mgL^-1)),
+#      xlab = "Anoxic age (days)")
+# plot(NH4_SRP.data.2017$NH4.N_mgL ~ NH4_SRP.data.2017$AnoxA,
+#      las = 1,
+#      ylab = expression(NH[4]^"+"~(mg~L^-1)),
+#      xlab = "Anoxic age (days)")
+# dev.off()
+# 
+# pdf("./Exploration output/NH4-SRP_2018.pdf", width=8, height=4)
+# par(mfrow=c(1,2))
+# par(mar=c(4,5,2,1)+.1)
+# plot(NH4_SRP.data.2018$SRP_mgL ~ NH4_SRP.data.2018$AnoxA,
+#      las = 1,
+#      ylab = expression(SRP~(mgL^-1)),
+#      xlab = "Anoxic age (days)",
+#      pch = 16,
+#      col = c("#73BAE6","#C7144C","#33A02C","#FFD700","#C742B5")[as.numeric(as.factor(NH4_SRP.data.2018$Depth_m))])
+# plot(NH4_SRP.data.2018$NH4.N_mgL ~ NH4_SRP.data.2018$AnoxA,
+#      las = 1,
+#      ylab = expression(NH[4]^"+"~(mg~L^-1)),
+#      xlab = "Anoxic age (days)",
+#      pch = 16,
+#      col = c("#73BAE6","#C7144C","#33A02C","#FFD700","#C742B5")[as.numeric(as.factor(NH4_SRP.data.2018$Depth_m))])
+# dev.off()
+# 
+# pdf("./Exploration output/NH4-SRP_2019.pdf", width=8, height=4)
+# par(mfrow=c(1,2))
+# par(mar=c(4,5,2,1)+.1)
+# plot(NH4_SRP.data.2019$SRP_mgL ~ NH4_SRP.data.2019$AnoxA,
+#      las = 1,
+#      ylab = expression(SRP~(mgL^-1)),
+#      xlab = "Anoxic age (days)")
+# plot(NH4_SRP.data.2019$NH4.N_mgL ~ NH4_SRP.data.2019$AnoxA,
+#      las = 1,
+#      ylab = expression(NH[4]^"+"~(mg~L^-1)),
+#      xlab = "Anoxic age (days)")
+# dev.off()
+# 
+# pdf("./Exploration output/NH4-SRP_2020.pdf", width=8, height=4)
+# par(mfrow=c(1,2))
+# par(mar=c(4,5,2,1)+.1)
+# plot(NH4_SRP.data.2020$SRP_mgL ~ NH4_SRP.data.2020$AnoxA,
+#      las = 1,
+#      ylab = expression(SRP~(mgL^-1)),
+#      xlab = "Anoxic age (days)")
+# plot(NH4_SRP.data.2020$NH4.N_mgL ~ NH4_SRP.data.2020$AnoxA,
+#      las = 1,
+#      ylab = expression(NH[4]^"+"~(mg~L^-1)),
+#      xlab = "Anoxic age (days)")
+# dev.off()
+# 
+# 
+# pdf("./Exploration output/NH4-SRP_2021.pdf", width=8, height=4)
+# par(mfrow=c(1,2))
+# par(mar=c(4,5,2,1)+.1)
+# plot(NH4_SRP.data.2021$SRP_mgL ~ NH4_SRP.data.2021$AnoxA,
+#      las = 1,
+#      ylab = expression(SRP~(mgL^-1)),
+#      xlab = "Anoxic age (days)")
+# plot(NH4_SRP.data.2021$NH4.N_mgL ~ NH4_SRP.data.2021$AnoxA,
+#      las = 1,
+#      ylab = expression(NH[4]^"+"~(mg~L^-1)),
+#      xlab = "Anoxic age (days)")
+# dev.off()
 
 
 #Add a column for pch values
@@ -4450,15 +4339,15 @@ NH4_SRP.data.all = rbind(NH4_SRP.data.2017,
                          NH4_SRP.data.2019,
                          NH4_SRP.data.2020)
 
-plot(NH4_SRP.data.all$SRP_mgL ~ NH4_SRP.data.all$AnoxA,
-     las = 1,
-     ylab = expression(SRP~(mgL^-1)),
-     xlab = "Anoxic age (days)", pch = NH4_SRP.data.all$year)
-legend("bottomright", pch = c(0,1,2), legend = c("2017", "2019", "2020"))
-plot(NH4_SRP.data.all$NH4.N_mgL ~ NH4_SRP.data.all$AnoxA,
-     las = 1,
-     ylab = expression(NH[4]^"+"~(mg~L^-1)),
-     xlab = "Anoxic age (days)", pch = NH4_SRP.data.all$year)
+# plot(NH4_SRP.data.all$SRP_mgL ~ NH4_SRP.data.all$AnoxA,
+#      las = 1,
+#      ylab = expression(SRP~(mgL^-1)),
+#      xlab = "Anoxic age (days)", pch = NH4_SRP.data.all$year)
+# legend("bottomright", pch = c(0,1,2), legend = c("2017", "2019", "2020"))
+# plot(NH4_SRP.data.all$NH4.N_mgL ~ NH4_SRP.data.all$AnoxA,
+#      las = 1,
+#      ylab = expression(NH[4]^"+"~(mg~L^-1)),
+#      xlab = "Anoxic age (days)", pch = NH4_SRP.data.all$year)
 
 #Test without anoxic age = 0
 pdf("./Output/Fig. 1, Nutrients-AA, no boxplot.pdf", width=8, height=4)
@@ -4470,20 +4359,20 @@ plot(NH4_SRP.data.all$SRP_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.all$Anox
      ylab = expression(SRP~(mg~L^-1)),
      xlab = "Anoxic age (days)",
      pch = c(15,16,17)[NH4_SRP.data.all$year[NH4_SRP.data.all$AnoxA!=0]],
-     col = c("#73BAE6","#C7144C", "#33A02C")[NH4_SRP.data.all$year[NH4_SRP.data.all$AnoxA!=0]],
+     col = c("#73BAE6","#C7144C", "#FFD700")[NH4_SRP.data.all$year[NH4_SRP.data.all$AnoxA!=0]],
      cex = NH4_SRP.data.all$cex[NH4_SRP.data.all$AnoxA!=0])
 legend("bottomright",
        pch = c(22,21,24),
        pt.cex = c(1,2,1),
        legend = c("2017", "2019","2020"),
-       pt.bg = c("#73BAE6","#C7144C", "#33A02C"))
+       pt.bg = c("#73BAE6","#C7144C", "#FFD700"))
 plot(NH4_SRP.data.all$NH4.N_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.all$AnoxA[NH4_SRP.data.all$AnoxA!=0],
      las = 1,
      ylim = c(0,1.1),
      ylab = expression(NH[4]^"+"~(mg~L^-1)),
      xlab = "Anoxic age (days)",
      pch = c(15,16,17)[NH4_SRP.data.all$year[NH4_SRP.data.all$AnoxA!=0]],
-     col = c("#73BAE6","#C7144C", "#33A02C")[NH4_SRP.data.all$year[NH4_SRP.data.all$AnoxA!=0]],
+     col = c("#73BAE6","#C7144C", "#FFD700")[NH4_SRP.data.all$year[NH4_SRP.data.all$AnoxA!=0]],
      cex = NH4_SRP.data.all$cex[NH4_SRP.data.all$AnoxA!=0])
 dev.off()
 
@@ -4510,39 +4399,87 @@ dev.off()
 NH4_SRP.data.all$alpha = ar.alpha[match(x = NH4_SRP.data.all$Depth_m, table = ar.alpha[,1]),2]
 
 
-SRP.all.lm = lm(NH4_SRP.data.all$SRP_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.all$AnoxA[NH4_SRP.data.all$AnoxA!=0])
-NH4.all.lm = lm(NH4_SRP.data.all$NH4.N_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.all$AnoxA[NH4_SRP.data.all$AnoxA!=0])
+SRP.anox.lm = lm(NH4_SRP.data.all$SRP_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.all$AnoxA[NH4_SRP.data.all$AnoxA!=0])
+SRP.all.lm = lm(NH4_SRP.data.all$SRP_mgL ~ NH4_SRP.data.all$AnoxA)
+NH4.anox.lm = lm(NH4_SRP.data.all$NH4.N_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.all$AnoxA[NH4_SRP.data.all$AnoxA!=0])
+NH4.all.lm = lm(NH4_SRP.data.all$NH4.N_mgL ~ NH4_SRP.data.all$AnoxA)
 
 SRP.all.DOY.lm = lm(NH4_SRP.data.all$SRP_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.all$DOY[NH4_SRP.data.all$AnoxA!=0])
 NH4.all.DOY.lm = lm(NH4_SRP.data.all$NH4.N_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.all$DOY[NH4_SRP.data.all$AnoxA!=0])
 
-SRP.all.mlm = lm(NH4_SRP.data.all$SRP_mgL ~ NH4_SRP.data.all$AnoxA+NH4_SRP.data.all$Depth_m)
-NH4.all.mlm = lm(NH4_SRP.data.all$NH4.N_mgL ~ NH4_SRP.data.all$AnoxA+NH4_SRP.data.all$Depth_m)
+#multiple regressions in anoxia. mlm = AnoxA, d = Depth, t = time
+SRP.anox.mlm.d = lm(NH4_SRP.data.all$SRP_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.all$AnoxA[NH4_SRP.data.all$AnoxA!=0]+NH4_SRP.data.all$Depth_m[NH4_SRP.data.all$AnoxA!=0])
+NH4.anox.mlm.d = lm(NH4_SRP.data.all$NH4.N_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.all$AnoxA[NH4_SRP.data.all$AnoxA!=0]+NH4_SRP.data.all$Depth_m[NH4_SRP.data.all$AnoxA!=0])
+
+SRP.anox.mlm.t = lm(NH4_SRP.data.all$SRP_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.all$AnoxA[NH4_SRP.data.all$AnoxA!=0] +NH4_SRP.data.all$DOY[NH4_SRP.data.all$AnoxA!=0])
+NH4.anox.mlm.t = lm(NH4_SRP.data.all$NH4.N_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.all$AnoxA[NH4_SRP.data.all$AnoxA!=0]+NH4_SRP.data.all$DOY[NH4_SRP.data.all$AnoxA!=0])
+
+SRP.anox.d.t = lm(NH4_SRP.data.all$SRP_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.all$Depth_m[NH4_SRP.data.all$AnoxA!=0] +NH4_SRP.data.all$DOY[NH4_SRP.data.all$AnoxA!=0])
+NH4.anox.d.t = lm(NH4_SRP.data.all$NH4.N_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.all$Depth_m[NH4_SRP.data.all$AnoxA!=0]+NH4_SRP.data.all$DOY[NH4_SRP.data.all$AnoxA!=0])
+
 
 #Simple lm
-summary(SRP.all.lm) #R2 = 0.496
-summary(NH4.all.lm) #R2 = 0.442
+summary(SRP.anox.lm) #R2 = 0.4779
+summary(NH4.anox.lm) #R2 = 0.442
+summary(SRP.all.lm) #R2 = 0.6189
+summary(NH4.all.lm) #R2 = 0.547
+
 summary(SRP.all.DOY.lm) #R2 = 0.002
 summary(NH4.all.DOY.lm) #R2 = 0.002
 #Multiple lm
-summary(SRP.all.mlm) #R2adj = 0.54
-summary(NH4.all.mlm) #R2adj = 0.54
+summary(SRP.anox.mlm.d) #R2adj = 0.57
+summary(NH4.anox.mlm.d) #R2adj = 0.52
+summary(SRP.anox.mlm.t) #R2adj = 0.5477
+summary(NH4.anox.mlm.t) #R2adj = 0.5758
+summary(SRP.anox.d.t) #R2adj = 0.4395
+summary(NH4.anox.d.t) #R2adj = 0.319
 
 
 
-
-#
-
-
-
-
-
-
-
-
-
+#Relationships with scaled predictive variables
+NH4_SRP.data.sc = cbind(scale(NH4_SRP.data.all$Depth_m,center = T, scale = T),
+                        scale(NH4_SRP.data.all$DOY,center = T, scale = T),
+                        scale(NH4_SRP.data.all$AnoxA,center = T, scale = T),
+                        NH4_SRP.data.all$SRP_mgL,
+                        NH4_SRP.data.all$NH4.N_mgL)
+  
+colnames(NH4_SRP.data.sc) = c("Depth_m","DOY","AnoxA","SRP_mgL","NH4.N_mgL")
+NH4_SRP.data.sc = as.data.frame(NH4_SRP.data.sc)
 
 
+SRP.anox.lm.sc = lm(NH4_SRP.data.sc$SRP_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.sc$AnoxA[NH4_SRP.data.all$AnoxA!=0])
+SRP.all.lm.sc = lm(NH4_SRP.data.sc$SRP_mgL ~ NH4_SRP.data.sc$AnoxA)
+NH4.anox.lm.sc = lm(NH4_SRP.data.sc$NH4.N_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.sc$AnoxA[NH4_SRP.data.all$AnoxA!=0])
+NH4.all.lm.sc = lm(NH4_SRP.data.sc$NH4.N_mgL ~ NH4_SRP.data.sc$AnoxA)
+
+SRP.all.DOY.lm.sc = lm(NH4_SRP.data.sc$SRP_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.sc$DOY[NH4_SRP.data.all$AnoxA!=0])
+NH4.all.DOY.lm.sc = lm(NH4_SRP.data.sc$NH4.N_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.sc$DOY[NH4_SRP.data.all$AnoxA!=0])
+
+#multiple regressions in anoxia. mlm = AnoxA, d = Depth, t = time
+SRP.anox.mlm.d.sc = lm(NH4_SRP.data.sc$SRP_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.sc$AnoxA[NH4_SRP.data.all$AnoxA!=0]+NH4_SRP.data.sc$Depth_m[NH4_SRP.data.all$AnoxA!=0])
+NH4.anox.mlm.d.sc = lm(NH4_SRP.data.sc$NH4.N_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.sc$AnoxA[NH4_SRP.data.all$AnoxA!=0]+NH4_SRP.data.sc$Depth_m[NH4_SRP.data.all$AnoxA!=0])
+
+SRP.anox.mlm.t.sc = lm(NH4_SRP.data.sc$SRP_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.sc$AnoxA[NH4_SRP.data.all$AnoxA!=0] +NH4_SRP.data.sc$DOY[NH4_SRP.data.all$AnoxA!=0])
+NH4.anox.mlm.t.sc = lm(NH4_SRP.data.sc$NH4.N_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.sc$AnoxA[NH4_SRP.data.all$AnoxA!=0]+NH4_SRP.data.sc$DOY[NH4_SRP.data.all$AnoxA!=0])
+
+SRP.anox.d.t.sc = lm(NH4_SRP.data.sc$SRP_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.sc$Depth_m[NH4_SRP.data.all$AnoxA!=0] +NH4_SRP.data.sc$DOY[NH4_SRP.data.all$AnoxA!=0])
+NH4.anox.d.t.sc = lm(NH4_SRP.data.sc$NH4.N_mgL[NH4_SRP.data.all$AnoxA!=0] ~ NH4_SRP.data.sc$Depth_m[NH4_SRP.data.all$AnoxA!=0]+NH4_SRP.data.sc$DOY[NH4_SRP.data.all$AnoxA!=0])
+
+#Simple lm
+summary(SRP.anox.lm.sc) #R2 = 0.4779
+summary(NH4.anox.lm.sc) #R2 = 0.4403
+summary(SRP.all.lm.sc) #R2 = 0.6189
+summary(NH4.all.lm.sc) #R2 = 0.547
+
+summary(SRP.all.DOY.lm.sc) #R2 = 0.0023
+summary(NH4.all.DOY.lm.sc) #R2 = 0.0028
+#Multiple lm
+summary(SRP.anox.mlm.d.sc) #R2adj = 0.5725
+summary(NH4.anox.mlm.d.sc) #R2adj = 0.522
+summary(SRP.anox.mlm.t.sc) #R2adj = 0.5477
+summary(NH4.anox.mlm.t.sc) #R2adj = 0.5758
+summary(SRP.anox.d.t.sc) #R2adj = 0.4395
+summary(NH4.anox.d.t.sc) #R2adj = 0.319
 
 
 
