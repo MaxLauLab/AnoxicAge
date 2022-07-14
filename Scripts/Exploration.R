@@ -40,11 +40,6 @@ theme_klima<- function(base_size = 14, base_family = "") {
     )
 }
 
-source('D:/Postdoc/Allemagne/Github/AnoxicAge/Scripts/TheilSen.R', encoding = 'UTF-8')
-
-
-
-
 #########################################################################################
 ###########################Calculate Jz Arendsee using loggers###########################
 #########################################################################################
@@ -437,33 +432,68 @@ Ar.Living.2020.log = nlsLM(Ar.Jz.2020 ~ b*log10(k*temp.object),
 #Exponential plateau relationships
 temp.object = Jz.mat[-5,6]
 temp.max = max(Ar.Jz.2016)
+temp.min = min(Ar.Jz.2016)
 Ar.Living.2016.exp = nlsLM(Ar.Jz.2016 ~ t.m - (t.m - b) * exp(-k*temp.object),
-                           start = list(t.m = temp.max, b=0.05, k=5))
+                           start = list(t.m = temp.max, b=temp.min, k=5),
+                           lower = c(1.5*temp.min, 0, 0),
+                           upper = c(2*temp.max,temp.max,15)) #0.995
+pred <- predict(Ar.Living.2016.exp, temp.object)
+rss <- sum((pred - Ar.Jz.2016) ^ 2)
+tss <- sum((temp - mean(Ar.Jz.2016)) ^ 2)
+rsq <- 1 - rss/tss
+
 temp.object = Jz.mat[,6]
 temp.max = max(Ar.Jz.2017)
+temp.min = min(Ar.Jz.2017)
 Ar.Living.2017.exp = nlsLM(Ar.Jz.2017 ~ t.m - (t.m - b) * exp(-k*temp.object),
-                           start = list(t.m = temp.max, b=0.05, k=5)) #R2 = 0.96
+                           start = list(t.m = temp.max, b=temp.min, k=5),
+                           lower = c(1.5*temp.min, 0, 0),
+                           upper = c(2*temp.max,temp.max,15)) #R2 = 0.999
+
+pred <- predict(Ar.Living.2017.exp, temp.object)
+rss <- sum((pred - Ar.Jz.2017) ^ 2)
+tss <- sum((temp - mean(Ar.Jz.2017)) ^ 2)
+rsq <- 1 - rss/tss
+
 
 temp.max = max(Ar.Jz.2018)
+temp.min = min(Ar.Jz.2018)
 Ar.Living.2018.exp = nlsLM(Ar.Jz.2018 ~ t.m - (t.m - b) * exp(-k*temp.object),
-                           start = list(t.m = temp.max, b=0.05, k=5)) #R2 = 0.97
+                           start = list(t.m = temp.max, b=temp.min, k=5),
+                           lower = c(1.5*temp.min, 0, 0),
+                           upper = c(2*temp.max,temp.max,15)) #R2 = 0.97
 
+pred <- predict(Ar.Living.2018.exp, temp.object)
+rss <- sum((pred - Ar.Jz.2018) ^ 2)
+tss <- sum((temp - mean(Ar.Jz.2018)) ^ 2)
+rsq <- 1 - rss/tss
 
 temp.max = max(Ar.Jz.2019)
+temp.min = min(Ar.Jz.2019)
 Ar.Living.2019.exp = nlsLM(Ar.Jz.2019 ~ t.m - (t.m - b) * exp(-k*temp.object),
-                           start = list(t.m = temp.max, b=0.05, k=5)) #R2 = 0.92
+                           start = list(t.m = temp.max, b=temp.min, k=5),
+                           lower = c(1.5*temp.min, 0, 0),
+                           upper = c(2*temp.max,temp.max,15)) #R2 = 0.9998
+pred <- predict(Ar.Living.2019.exp, temp.object)
+rss <- sum((pred - Ar.Jz.2019) ^ 2)
+tss <- sum((temp - mean(Ar.Jz.2019)) ^ 2)
+rsq <- 1 - rss/tss
+
 
 temp.max = max(Ar.Jz.2020)
+temp.min = min(Ar.Jz.2020)
 Ar.Living.2020.exp = nlsLM(Ar.Jz.2020 ~ t.m - (t.m - b) * exp(-k*temp.object),
-                           start = list(t.m = temp.max, b=0.05, k=5)) #R2 = 0.94
+                           start = list(t.m = temp.max, b=temp.min, k=5),
+                           lower = c(1.5*temp.min, 0, 0),
+                           upper = c(2*temp.max,temp.max,15)) #R2 = 0.9999
+pred <- predict(Ar.Living.2020.exp, temp.object)
+rss <- sum((pred - Ar.Jz.2020) ^ 2)
+tss <- sum((temp - mean(Ar.Jz.2020)) ^ 2)
+rsq <- 1 - rss/tss
+
 
 rm(temp.object)
 
-
-# pred <- predict(Ar.Jz.alpha.YSI.2021.log, alpha)
-# rss <- sum((pred - temp) ^ 2)
-# tss <- sum((temp - mean(temp)) ^ 2)
-# rsq <- 1 - rss/tss
 
 
 #Plot for hourly resolution
@@ -485,8 +515,8 @@ points(Ar.Jz.2019 ~ Jz.mat[, 6], col = "red",pch=16)
 # abline(lm(Ar.Jz.2016 ~ Jz.mat[-5, 6]), col ="black")
 points(Ar.Jz.2020 ~ Jz.mat[,6], col="pink", pch = 16)
 # abline(lm(Ar.Jz.2020 ~ Jz.mat[, 6]), col ="pink")
-legend("topleft", legend = c("2016","2017","2018","2019","2020"),
-       text.col = c("black","blue", "chartreuse3","red","pink"))
+legend("topleft", legend = c("2017","2018","2019","2020"),
+       text.col = c("blue", "chartreuse3","red","pink"))
 
 #Log-linear
 plot(Ar.Jz.2017 ~ Jz.mat[, 6], las =1,
@@ -514,25 +544,25 @@ plot(Ar.Jz.2017 ~ Jz.mat[, 6], las =1,
      ylab = expression(J[z]~(mg~O[2]~L^-1~d^-1)),
      ylim = c(0.04, 0.30),
      main = "Exponential plateau", col ="blue",pch=16)
-# curve(coef(Ar.Living.2017.exp)[1] - (coef(Ar.Living.2017.exp)[1] - coef(Ar.Living.2017.exp)[2])*
-#         exp(-coef(Ar.Living.2017.exp)[3]*x),
-#       add=T, col ="blue")
+curve(coef(Ar.Living.2017.exp)[1] - (coef(Ar.Living.2017.exp)[1] - coef(Ar.Living.2017.exp)[2])*
+        exp(-coef(Ar.Living.2017.exp)[3]*x),
+      add=T, col ="blue")
 points(Ar.Jz.2018 ~ Jz.mat[, 6], col ="chartreuse3",pch=16)
 curve(coef(Ar.Living.2018.exp)[1] - (coef(Ar.Living.2018.exp)[1] - coef(Ar.Living.2018.exp)[2])*
         exp(-coef(Ar.Living.2018.exp)[3]*x),
-      add=T, col ="chartreuse3")
+      add=T, col ="chartreuse3", lty = 2)
 points(Ar.Jz.2019 ~ Jz.mat[, 6], col = "red",pch=16)
-# curve(coef(Ar.Living.2019.exp)[1] - (coef(Ar.Living.2019.exp)[1] - coef(Ar.Living.2019.exp)[2])*
-#         exp(-coef(Ar.Living.2019.exp)[3]*x),
-#       add=T, col ="red")
+curve(coef(Ar.Living.2019.exp)[1] - (coef(Ar.Living.2019.exp)[1] - coef(Ar.Living.2019.exp)[2])*
+        exp(-coef(Ar.Living.2019.exp)[3]*x),
+      add=T, col ="red")
 # points(Ar.Jz.2016 ~ Jz.mat[-5,6], col="black", pch = 16)
 # curve(coef(Ar.Living.2016.exp)[1] - (coef(Ar.Living.2016.exp)[1] - coef(Ar.Living.2016.exp)[2])*
 #         exp(-coef(Ar.Living.2016.exp)[3]*x),
 #       add=T, col ="black")
 points(Ar.Jz.2020 ~ Jz.mat[,6], col="pink", pch = 16)
-# curve(coef(Ar.Living.2020.exp)[1] - (coef(Ar.Living.2020.exp)[1] - coef(Ar.Living.2020.exp)[2])*
-#         exp(-coef(Ar.Living.2020.exp)[3]*x),
-#       add=T, col ="pink")
+curve(coef(Ar.Living.2020.exp)[1] - (coef(Ar.Living.2020.exp)[1] - coef(Ar.Living.2020.exp)[2])*
+        exp(-coef(Ar.Living.2020.exp)[3]*x),
+      add=T, col ="pink")
 dev.off()
 }
 
@@ -643,7 +673,15 @@ Ar.Living.2017.day.SegLm.exp = nlsLM(Ar.Jz.day.2017 ~ j.m - (j.m-b)*exp(-k*Jz.ma
                                      start = list(j.m = max(Ar.Jz.day.2017), b = 0.2, k = 10))
 
 Ar.Living.2018.day.SegLm.exp = nlsLM(Ar.Jz.day.2018 ~ j.m - (j.m-b)*exp(-k*Jz.mat[,6]),
-                                     start = list(j.m = max(Ar.Jz.day.2018), b = 0.2, k = 10))
+                                     start = list(j.m = max(Ar.Jz.day.2018), b = min(Ar.Jz.day.2018), k = 10),
+                                     lower = c(1.4*max(Ar.Jz.day.2018),0,0),
+                                     upper = c(2*max(Ar.Jz.day.2018), max(Ar.Jz.day.2018),15)) #R2 = 0.929
+
+pred <- predict(Ar.Living.2018.day.SegLm.exp, Jz.mat[,6])
+rss <- sum((pred - Ar.Jz.day.2018) ^ 2)
+tss <- sum((temp - mean(Ar.Jz.day.2018)) ^ 2)
+rsq <- 1 - rss/tss
+
 Ar.Living.2019.day.SegLm.exp = nlsLM(Ar.Jz.day.2019 ~ j.m - (j.m-b)*exp(-k*Jz.mat[,6]),
                                      start = list(j.m = max(Ar.Jz.day.2019), b = 0.2, k = 10))
 Ar.Living.2020.day.SegLm.exp = nlsLM(Ar.Jz.day.2020 ~ j.m - (j.m-b)*exp(-k*Jz.mat[,6]),
@@ -919,8 +957,11 @@ temp.max = max(Ar.Jz.short.2017)
 Ar.Living.short.2017.exp = nlsLM(Ar.Jz.short.2017 ~ t.m - (t.m - b) * exp(-k*temp.object),
                            start = list(t.m = temp.max, b=0.05, k=5))
 temp.max = max(Ar.Jz.short.2018)
+temp.min = min(Ar.Jz.short.2018)
 Ar.Living.short.2018.exp = nlsLM(Ar.Jz.short.2018 ~ t.m - (t.m - b) * exp(-k*temp.object),
-                           start = list(t.m = temp.max, b=0.05, k=5))
+                           start = list(t.m = temp.max, b=temp.min, k=5),
+                           lower = c(1.4*temp.max,0,0),
+                           upper = c(2*temp.max,temp.max,15))
 temp.max = max(Ar.Jz.short.2019)
 Ar.Living.short.2019.exp = nlsLM(Ar.Jz.short.2019 ~ t.m - (t.m - b) * exp(-k*temp.object),
                            start = list(t.m = temp.max, b=0.05, k=5))
@@ -929,89 +970,89 @@ Ar.Living.short.2020.exp = nlsLM(Ar.Jz.short.2020 ~ t.m - (t.m - b) * exp(-k*tem
                            start = list(t.m = temp.max, b=0.05, k=5))
 rm(temp.object)
 
-{
-  png("./Output/Fig. Sx Three vs five loggers.png", width = 8.36, height = 4.4, units = "in", res = 300)
-  
-# png("./Output/Three loggers only.png", width = 8.36, height = 4.4, units = "in", res = 300)
-par(mfrow=c(1,2))
-par(mar=c(4,5,3,1)+.1)
-plot(Ar.Jz.2017 ~ Jz.mat[,6],
-     las = 1, pch = 16,
-     ylim = c(0,0.25),
-     ylab = expression(Jz~(mg~O[2]~L^-1)),
-     xlab = expression(alpha*(z)),
-     col = "blue",
-     main = "Log-linear")
-curve(coef(Ar.Living.short.2017.log)[1]*log10(x*coef(Ar.Living.short.2017.log)[2]),
-      add=T, col ="blue")
-curve(coef(Ar.Living.2017.day.SegLm.log)[1]*log10(x*coef(Ar.Living.2017.day.SegLm.log)[2]),
-      add=T, col ="blue", lty=2)
-points(Ar.Jz.2018 ~ Jz.mat[,6], pch = 16, col = "chartreuse3")
-curve(coef(Ar.Living.short.2018.log)[1]*log10(x*coef(Ar.Living.short.2018.log)[2]),
-      add=T, col ="chartreuse3")
-curve(coef(Ar.Living.2018.day.SegLm.log)[1]*log10(x*coef(Ar.Living.2018.day.SegLm.log)[2]),
-      add=T, col ="chartreuse3", lty=2)
-points(Ar.Jz.2019 ~ Jz.mat[,6], pch = 16, col = "red")
-curve(coef(Ar.Living.short.2019.log)[1]*log10(x*coef(Ar.Living.short.2019.log)[2]),
-      add=T, col ="red")
-curve(coef(Ar.Living.2019.day.SegLm.log)[1]*log10(x*coef(Ar.Living.2019.day.SegLm.log)[2]),
-      add=T, col ="red", lty=2)
-points(Ar.Jz.2020 ~ Jz.mat[,6], pch = 16, col = "pink")
-curve(coef(Ar.Living.short.2020.log)[1]*log10(x*coef(Ar.Living.short.2020.log)[2]),
-      add=T, col ="pink")
-curve(coef(Ar.Living.2020.day.SegLm.log)[1]*log10(x*coef(Ar.Living.2020.day.SegLm.log)[2]),
-      add=T, col ="pink", lty=2)
-
-legend("topleft", legend = c("2017","2018","2019","2020"),
-       text.col = c("blue", "chartreuse3","red","pink"))
-legend("bottomright", lty = c(1,2), legend = c("3 loggers fit", "5 loggers fit"))
-
-
-plot(Ar.Jz.2017 ~ Jz.mat[,6],
-     las = 1, pch = 16,
-     ylim = c(0,0.25),
-     ylab = expression(Jz~(mg~O[2]~L^-1)),
-     xlab = expression(alpha*(z)),
-     col = "blue",
-     main = "Exponential plateau")
-curve(coef(Ar.Living.short.2017.exp)[1] - (coef(Ar.Living.short.2017.exp)[1] - 
-                                             coef(Ar.Living.short.2017.exp)[2]) * 
-        exp(-coef(Ar.Living.short.2017.exp)[3]*x),
-      add=T, col ="blue")
-curve(coef(Ar.Living.2017.day.SegLm.exp)[1] - (coef(Ar.Living.2017.day.SegLm.exp)[1] - 
-                                             coef(Ar.Living.2017.day.SegLm.exp)[2]) * 
-        exp(-coef(Ar.Living.2017.day.SegLm.exp)[3]*x),
-      add=T, col ="blue", lty=2)
-
-points(Ar.Jz.2018 ~ Jz.mat[,6], pch = 16, col = "chartreuse3")
-curve(coef(Ar.Living.short.2018.exp)[1] - (coef(Ar.Living.short.2018.exp)[1] - 
-                                             coef(Ar.Living.short.2018.exp)[2]) * 
-        exp(-coef(Ar.Living.short.2018.exp)[3]*x),
-      add=T, col ="chartreuse3")
-curve(coef(Ar.Living.2018.day.SegLm.exp)[1] - (coef(Ar.Living.2018.day.SegLm.exp)[1] - 
-                                                 coef(Ar.Living.2018.day.SegLm.exp)[2]) * 
-        exp(-coef(Ar.Living.2018.day.SegLm.exp)[3]*x),
-      add=T, col ="chartreuse3", lty=2)
-points(Ar.Jz.2019 ~ Jz.mat[,6], pch = 16, col = "red")
-curve(coef(Ar.Living.short.2019.exp)[1] - (coef(Ar.Living.short.2019.exp)[1] - 
-                                             coef(Ar.Living.short.2019.exp)[2]) * 
-        exp(-coef(Ar.Living.short.2019.exp)[3]*x),
-      add=T, col ="red")
-curve(coef(Ar.Living.2019.day.SegLm.exp)[1] - (coef(Ar.Living.2019.day.SegLm.exp)[1] - 
-                                                 coef(Ar.Living.2019.day.SegLm.exp)[2]) * 
-        exp(-coef(Ar.Living.2019.day.SegLm.exp)[3]*x),
-      add=T, col ="red", lty=2)
-points(Ar.Jz.2020 ~ Jz.mat[,6], pch = 16, col = "pink")
-curve(coef(Ar.Living.short.2020.exp)[1] - (coef(Ar.Living.short.2020.exp)[1] - 
-                                             coef(Ar.Living.short.2020.exp)[2]) * 
-        exp(-coef(Ar.Living.short.2020.exp)[3]*x),
-      add=T, col ="pink")
-curve(coef(Ar.Living.2020.day.SegLm.exp)[1] - (coef(Ar.Living.2020.day.SegLm.exp)[1] - 
-                                                 coef(Ar.Living.2020.day.SegLm.exp)[2]) * 
-        exp(-coef(Ar.Living.2020.day.SegLm.exp)[3]*x),
-      add=T, col ="pink", lty=2)
-dev.off()
-}
+# {
+#   png("./Output/Fig. Sx Three vs five loggers.png", width = 8.36, height = 4.4, units = "in", res = 300)
+#   
+# # png("./Output/Three loggers only.png", width = 8.36, height = 4.4, units = "in", res = 300)
+# par(mfrow=c(1,2))
+# par(mar=c(4,5,3,1)+.1)
+# plot(Ar.Jz.2017 ~ Jz.mat[,6],
+#      las = 1, pch = 16,
+#      ylim = c(0,0.25),
+#      ylab = expression(Jz~(mg~O[2]~L^-1)),
+#      xlab = expression(alpha*(z)),
+#      col = "blue",
+#      main = "Log-linear")
+# curve(coef(Ar.Living.short.2017.log)[1]*log10(x*coef(Ar.Living.short.2017.log)[2]),
+#       add=T, col ="blue")
+# curve(coef(Ar.Living.2017.day.SegLm.log)[1]*log10(x*coef(Ar.Living.2017.day.SegLm.log)[2]),
+#       add=T, col ="blue", lty=2)
+# points(Ar.Jz.2018 ~ Jz.mat[,6], pch = 16, col = "chartreuse3")
+# curve(coef(Ar.Living.short.2018.log)[1]*log10(x*coef(Ar.Living.short.2018.log)[2]),
+#       add=T, col ="chartreuse3")
+# curve(coef(Ar.Living.2018.day.SegLm.log)[1]*log10(x*coef(Ar.Living.2018.day.SegLm.log)[2]),
+#       add=T, col ="chartreuse3", lty=2)
+# points(Ar.Jz.2019 ~ Jz.mat[,6], pch = 16, col = "red")
+# curve(coef(Ar.Living.short.2019.log)[1]*log10(x*coef(Ar.Living.short.2019.log)[2]),
+#       add=T, col ="red")
+# curve(coef(Ar.Living.2019.day.SegLm.log)[1]*log10(x*coef(Ar.Living.2019.day.SegLm.log)[2]),
+#       add=T, col ="red", lty=2)
+# points(Ar.Jz.2020 ~ Jz.mat[,6], pch = 16, col = "pink")
+# curve(coef(Ar.Living.short.2020.log)[1]*log10(x*coef(Ar.Living.short.2020.log)[2]),
+#       add=T, col ="pink")
+# curve(coef(Ar.Living.2020.day.SegLm.log)[1]*log10(x*coef(Ar.Living.2020.day.SegLm.log)[2]),
+#       add=T, col ="pink", lty=2)
+# 
+# legend("topleft", legend = c("2017","2018","2019","2020"),
+#        text.col = c("blue", "chartreuse3","red","pink"))
+# legend("bottomright", lty = c(1,2), legend = c("3 loggers fit", "5 loggers fit"))
+# 
+# 
+# plot(Ar.Jz.2017 ~ Jz.mat[,6],
+#      las = 1, pch = 16,
+#      ylim = c(0,0.25),
+#      ylab = expression(Jz~(mg~O[2]~L^-1)),
+#      xlab = expression(alpha*(z)),
+#      col = "blue",
+#      main = "Exponential plateau")
+# curve(coef(Ar.Living.short.2017.exp)[1] - (coef(Ar.Living.short.2017.exp)[1] - 
+#                                              coef(Ar.Living.short.2017.exp)[2]) * 
+#         exp(-coef(Ar.Living.short.2017.exp)[3]*x),
+#       add=T, col ="blue")
+# curve(coef(Ar.Living.2017.day.SegLm.exp)[1] - (coef(Ar.Living.2017.day.SegLm.exp)[1] - 
+#                                              coef(Ar.Living.2017.day.SegLm.exp)[2]) * 
+#         exp(-coef(Ar.Living.2017.day.SegLm.exp)[3]*x),
+#       add=T, col ="blue", lty=2)
+# 
+# points(Ar.Jz.2018 ~ Jz.mat[,6], pch = 16, col = "chartreuse3")
+# curve(coef(Ar.Living.short.2018.exp)[1] - (coef(Ar.Living.short.2018.exp)[1] - 
+#                                              coef(Ar.Living.short.2018.exp)[2]) * 
+#         exp(-coef(Ar.Living.short.2018.exp)[3]*x),
+#       add=T, col ="chartreuse3")
+# curve(coef(Ar.Living.2018.day.SegLm.exp)[1] - (coef(Ar.Living.2018.day.SegLm.exp)[1] - 
+#                                                  coef(Ar.Living.2018.day.SegLm.exp)[2]) * 
+#         exp(-coef(Ar.Living.2018.day.SegLm.exp)[3]*x),
+#       add=T, col ="chartreuse3", lty=2)
+# points(Ar.Jz.2019 ~ Jz.mat[,6], pch = 16, col = "red")
+# curve(coef(Ar.Living.short.2019.exp)[1] - (coef(Ar.Living.short.2019.exp)[1] - 
+#                                              coef(Ar.Living.short.2019.exp)[2]) * 
+#         exp(-coef(Ar.Living.short.2019.exp)[3]*x),
+#       add=T, col ="red")
+# curve(coef(Ar.Living.2019.day.SegLm.exp)[1] - (coef(Ar.Living.2019.day.SegLm.exp)[1] - 
+#                                                  coef(Ar.Living.2019.day.SegLm.exp)[2]) * 
+#         exp(-coef(Ar.Living.2019.day.SegLm.exp)[3]*x),
+#       add=T, col ="red", lty=2)
+# points(Ar.Jz.2020 ~ Jz.mat[,6], pch = 16, col = "pink")
+# curve(coef(Ar.Living.short.2020.exp)[1] - (coef(Ar.Living.short.2020.exp)[1] - 
+#                                              coef(Ar.Living.short.2020.exp)[2]) * 
+#         exp(-coef(Ar.Living.short.2020.exp)[3]*x),
+#       add=T, col ="pink")
+# curve(coef(Ar.Living.2020.day.SegLm.exp)[1] - (coef(Ar.Living.2020.day.SegLm.exp)[1] - 
+#                                                  coef(Ar.Living.2020.day.SegLm.exp)[2]) * 
+#         exp(-coef(Ar.Living.2020.day.SegLm.exp)[3]*x),
+#       add=T, col ="pink", lty=2)
+# dev.off()
+# }
 
 
 
@@ -1310,9 +1351,12 @@ Ar.Jz.alpha.YSI.2020.exp.short = list()
 for(i in 5:15){
   temp = Jz.YSI.list[[4]][1:i]
   temp.max = max(temp)
+  temp.min = min(temp)
   alpha.short = alpha[1:i]
   Ar.Jz.alpha.YSI.2020.exp.short[[i-4]] = nlsLM(temp ~ t.m - (t.m - b) * exp(-k*alpha.short),
-                                                start = list(t.m = temp.max, b=0.05, k=5))
+                                                start = list(t.m = temp.max, b=temp.min, k=5),
+                                                lower = c(1.4*temp.min, 0,0),
+                                                upper = c(2*temp.max, temp.max,15)) #THERE WAS NO LOWER BEFORE
 }
 
 
@@ -1638,6 +1682,7 @@ RMSE.mat[i,1] = sqrt(mean(Ar.Jz.lowres$residuals^2))
 
 temp = Jz.lowres.slice[,1]
 temp.max = max(Jz.lowres.slice[,1])
+temp.min = min(Jz.lowres.slice[,1])
 Ar.Jz.lowres.log = nlsLM(temp ~ b*log10(k*ar.alpha[,1]),
                                  start = list(b=0.08, k=200))
 
@@ -1653,7 +1698,7 @@ AIC.mat[i,2] = AIC(Ar.Jz.lowres.log)
 RMSE.mat[i,2] = sqrt(mean(summary(Ar.Jz.lowres.log)$residuals^2))
 
 Ar.Jz.lowres.exp = nlsLM(temp ~ t.m - (t.m - b) * exp(-k*ar.alpha[,1]),
-                                 start = list(t.m = temp.max, b=0.05, k=5))
+                         start = list(t.m = 1.6*temp.max, b=temp.min, k=5))
 pred <- predict(Ar.Jz.lowres.exp, ar.alpha[,1])
 rss <- sum((pred - temp) ^ 2)
 tss <- sum((temp - mean(temp)) ^ 2)
@@ -4338,7 +4383,6 @@ NH4_SRP.data.2020$cex = 1
 NH4_SRP.data.all = rbind(NH4_SRP.data.2017,
                          NH4_SRP.data.2019,
                          NH4_SRP.data.2020)
-
 # plot(NH4_SRP.data.all$SRP_mgL ~ NH4_SRP.data.all$AnoxA,
 #      las = 1,
 #      ylab = expression(SRP~(mgL^-1)),

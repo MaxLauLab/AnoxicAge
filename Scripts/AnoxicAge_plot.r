@@ -1,4 +1,4 @@
-
+setwd("D:/Postdoc/Allemagne/Github/AnoxicAge/Scripts")
 # Graph look
 papermet_nofrills <- function(base_size = 14, base_family = "") {
   # Starts with theme_grey and then modify some parts
@@ -44,8 +44,16 @@ library(readxl)
 #thresh.ox tox <- c(0.3)#mg/L entsprich 9.375 uM O2
 
 #imporat data
-rich_import <- read.csv("./Output/YSI.aa.2017.csv", fileEncoding = "UTF-8") 
-rich_import = t(rich_import)
+rich_import <- read.csv("../Output/YSI.aa.2017.csv", fileEncoding = "UTF-8") 
+rich_import = t(rich_import[,-1])
+
+# #No anoxia
+# rich_import[rich_import>0] = 0
+# rich_import[102,] = 1
+
+#Full anoxia
+# rich_import[rich_import>=0] = 1
+
 
 #calculate anoxic age
 dptt <- seq(1:(ncol(rich_import)-1)) #only data from 30 m, add top rows later, only days after onset of stratification?
@@ -110,10 +118,10 @@ p2 <-ggplot(data=aa.coerced)+
   facet_grid(lake~.#,
              #labeller=labeller(lake=c("cc"="Lake Croche","cw"="Lake Cromwell"))
              )+
-  geom_text(data=monthss,aes(x=diy,y=-49,label=mons))+
+  geom_text(data=monthss,aes(x=diy,y=-49,label=mons)) +
   geom_rect(data=holom,aes(xmin=diy,xmax=diy+10,ymin=ymins,ymax=-30.5),fill="lightgrey")+ #change bar for "circulation" here
   geom_text(data=holom,aes(x=diy+3.5,y=ys,label=mixi),angle=90) # position of "full circulation" text
 
 p2
 
-ggsave("./Output/AnoxicAgeGrid_2017.jpg", p2, device = "jpeg")
+ggsave("../Output/AnoxicAgeGrid_2017.jpg", p2, device = "jpeg")
