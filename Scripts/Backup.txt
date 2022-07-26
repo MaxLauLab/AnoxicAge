@@ -1,0 +1,161 @@
+library(RColorBrewer)
+library(plot.matrix)
+library(RColorBrewer)
+Interpolation <- function(V1, V2, n){
+  output = matrix(nrow = length(V1), ncol=n)
+  for(i in 1:n){
+    output[,i] = V1 + (V2-V1)/n * i
+  }
+  return(output)
+}
+setwd("D:/Postdoc/Allemagne/Github/AnoxicAge")
+Rinko <- read.csv("./Data/Raw/rinkos.csv", row.names=1)
+
+Ar = as.data.frame(matrix(nrow = 481, ncol = 4))
+strftime(Rinko$date.r[1], format = "%j") #147
+strftime(Rinko$date.r[1411], format = "%j") #238
+colnames(Ar) = c("Depth", "Temp", "DO_147", "DO_238")
+
+Ar$Depth = Rinko[which(Rinko$month == 5 & Rinko$lake == "ar"), "depth"]
+Ar$Temp = Rinko[which(Rinko$month == 5 & Rinko$lake == "ar"), "T_C"]
+Ar$DO_147 = Rinko[which(Rinko$month == 5 & Rinko$lake == "ar"), "DO_mgL"]
+Ar$DO_238 = c(Rinko[which(Rinko$month == 8 & Rinko$lake == "ar"), "DO_mgL"],0,0,0,0) #Complete the series with anoxia, same as above depths
+
+Ar[Ar<0] = 0
+
+#Create the 90 days in between the two profiles date (238-147-1)
+Inter.mat <- matrix(nrow = nrow(Ar), ncol = 90)
+Interpolation <- function(V1, V2, n){
+  output = matrix(nrow = length(V1), ncol=n)
+  for(i in 1:n){
+    output[,i] = V1 + (V2-V1)/n * i
+  }
+  return(output)
+}
+Inter.mat = Interpolation(Ar$DO_147, Ar$DO_238, 90)
+
+Ar.DO <- cbind(Ar$DO_147, Inter.mat, Ar$DO_238)
+Ar.anox <- ifelse(Ar.DO <= 2, 1, 0)
+Ar.anox.a <- Ar.anox
+for(j in 2:ncol(Ar.anox.a)){
+  temp = Ar.anox.a[,j-1]+Ar.anox.a[,j]
+  temp = ifelse(temp > Ar.anox.a[,j-1], temp, 0)
+  Ar.anox.a[,j] = temp
+}
+
+library(RColorBrewer)
+mypalette = c("white", brewer.pal(9, "YlOrBr"))
+if(log(max(Ar.anox.a),base = 1.5) > length(mypalette)) mypalette = c(mypalette, rep("#662506",round(log(max(Ar.anox.a),base=1.5))-length(mypalette)) )
+
+plot(log(Ar.anox.a, base = 1.5),
+     col = mypalette,
+     border= NA,
+     key = NULL,
+     main = "Hypoxic days in Arendsee",
+     axis.col = NULL,
+     axis.row = NULL,
+     ylab = "Depth (m)",
+     xlab = "Time (day of year)")
+axis(side = 2, tick = T,at = c(1,240,481), labels = c(48.5, 24.5, 0.5), las=1)
+axis(side = 1, tick = T,at = c(1,46,92), labels = c(147, 193, 238),line = 1)
+
+
+#Lake Sc
+
+
+
+#Create the 90 days in between the two profiles date (246-149-1)
+
+
+
+Sc.DO <- cbind(Sc$DO_ini, Inter.mat, Sc$DO_fin)
+Sc.anox <- ifelse(Sc.DO <= 2, 1, 0)
+Sc.anox.a <- Sc.anox
+for(j in 2:ncol(Sc.anox.a)){
+  temp = Sc.anox.a[,j-1]+Sc.anox.a[,j]
+  temp = ifelse(temp > Sc.anox.a[,j-1], temp, 0)
+  Sc.anox.a[,j] = temp
+}
+
+
+mypalette = c("white", brewer.pal(9, "YlOrBr"))
+if(log(max(Sc.anox.a),base = 1.5) > length(mypalette)) mypalette = c(mypalette, rep("#662506",round(log(max(Sc.anox.a),base=1.5))-length(mypalette)) )
+
+plot(log(Sc.anox.a, base = 1.5),
+     col = mypalette,
+     border= NA,
+     key = NULL,
+     main = "Hypoxic days in Sc",
+     axis.col = NULL,
+     axis.row = NULL,
+     ylab = "Depth (m)",
+     xlab = "Time (day of year)")
+axis(side = 2, tick = T,at = c(1,240,481), labels = c(48.5, 24.5, 0.5), las=1)
+axis(side = 1, tick = T,at = c(1,46,92), labels = c(147, 193, 238),line = 1)
+
+#List of lakes
+List.lakes = unique(Rinko$lake)
+InterpolatedMatrix = list()
+output = list()
+output.anox.a = list()
+#Create the interpolation for all lakes
+for(i in 1:length(List.lakes)){
+#Find first and last day of sampling
+T.ini = as.numeric(strftime(Rinko$date.r[min(which(Rinko$lake == List.lakes[i] & Rinko$month == min(Rinko[Rinko$lake == List.lakes[i],"month"])))], format = "%j")) #149
+T.end = as.numeric(strftime(Rinko$date.r[min(which(Rinko$lake == List.lakes[i] & Rinko$month == max(Rinko[Rinko$lake == List.lakes[i],"month"])))], format = "%j")) #149
+
+#Find the month with the largest amount of data
+Month.ini = min(Rinko[Rinko$lake == List.lakes[i],"month"])
+Month.end = max(Rinko[Rinko$lake == List.lakes[i],"month"])
+
+Length.ini = length(Rinko[which(Rinko$month == Month.ini & Rinko$lake == List.lakes[i]), "depth"])
+Length.end = length(Rinko[which(Rinko$month == Month.end & Rinko$lake == List.lakes[i]), "depth"])
+
+ShortestMonth = ifelse(Length.ini <= Length.end, Month.ini, Month.end)
+LongestMonth = ifelse(Length.ini > Length.end, Month.ini, Month.end)
+
+#Difference between the 2 sampling day
+DiffLength = max(Length.end,Length.ini) - min(Length.end,Length.ini)
+
+#Create the InterpolatedMatrix df
+InterpolatedMatrix[[i]] = as.data.frame(matrix(nrow = max(Length.ini, Length.end), ncol = 4))
+colnames(InterpolatedMatrix[[i]]) = c("Depth", "Temp", "DO_ini", "DO_end")
+
+InterpolatedMatrix[[i]]$Depth = Rinko[which(Rinko$month == LongestMonth & Rinko$lake == List.lakes[i]), "depth"]
+InterpolatedMatrix[[i]]$Temp = Rinko[which(Rinko$month == LongestMonth & Rinko$lake == List.lakes[i]), "T_C"]
+InterpolatedMatrix[[i]]$DO_ini = c(Rinko[which(Rinko$month == ShortestMonth & Rinko$lake == List.lakes[i]), "DO_mgL"], rep(min(Rinko[which(Rinko$month == ShortestMonth & Rinko$lake == List.lakes[i]), "DO_mgL"]),DiffLength))
+InterpolatedMatrix[[i]]$DO_end = Rinko[which(Rinko$month == LongestMonth & Rinko$lake == List.lakes[i]), "DO_mgL"]
+
+#Create interpolation matrix
+Inter.mat <- matrix(nrow = nrow(InterpolatedMatrix[[i]]), ncol = T.end - T.ini - 1)
+Inter.mat = Interpolation(InterpolatedMatrix[[i]]$DO_ini, InterpolatedMatrix[[i]]$DO_end, T.end - T.ini - 1)
+
+output[[i]] <- cbind(InterpolatedMatrix[[i]]$DO_ini, Inter.mat, InterpolatedMatrix[[i]]$DO_end)
+
+#Transform the interpolation in days of hypoxia/anoxia
+output.anox <- ifelse(output[[i]] <= 2, 1, 0)
+output.anox.a[[i]] <- output.anox
+for(j in 2:ncol(output.anox.a[[i]])){
+  temp = output.anox.a[[i]][,j-1]+output.anox.a[[i]][,j]
+  temp = ifelse(temp > output.anox.a[[i]][,j-1], temp, 0)
+  output.anox.a[[i]][,j] = temp
+}
+  
+}
+
+#Plot the results
+for(i in 1:length(output.anox.a)){
+mypalette = c("white", brewer.pal(9, "YlOrBr"))
+if(log(max(output.anox.a[[i]]),base = 1.5) > length(mypalette)) mypalette = c(mypalette, rep("#662506",round(log(max(output.anox.a[[i]]),base=1.5))-length(mypalette)) )
+
+plot(log(output.anox.a[[i]], base = 1.5),
+     col = mypalette,
+     border= NA,
+     key = NULL,
+     main = paste0("Hypoxic days in lake " i),
+     axis.col = NULL,
+     axis.row = NULL,
+     ylab = "Depth (m)",
+     xlab = "Time (day of year)")
+axis(side = 2, tick = T,at = c(1,240,481), labels = c(48.5, 24.5, 0.5), las=1)
+axis(side = 1, tick = T,at = c(1,46,92), labels = c(147, 193, 238),line = 1)}

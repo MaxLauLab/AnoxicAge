@@ -1,0 +1,50 @@
+######################################################################################
+Log File: C:\Users\Public\Documents\Jobin Yvon\Data\MaxLau\run23\AqualogSampleQLog.txt
+Date: Thursday, August 05, 2021
+Time: 2:51:04 PM
+######################################################################################
+[2021-08-05 14-51-04] 
+Aqualog Sample Q Experimental Parameters:
+[Aqualog Sample Q File] 
+[Aqualog Experiment File] C:\Users\Public\Documents\Jobin Yvon\Data\MaxLau\run23\DfltAqualogSampleQ.xml
+[Output Destination Folder] C:\Users\Public\Documents\Jobin Yvon\Data\MaxLau\run23\
+
+Output File Names:
+[Blank Group Prefix] Group
+[Blank File Base] Blank
+[Sample Prefix] Sample
+
+Blank & Sample Setup:
+[Blank Group Count] 1
+[Blank Group Start] 1
+[Samples Per Blank] 6
+[Blank Group Start] 1
+[Total Number of Blanks & Samples] 7
+
+Post Prossessing Options:
+IFE = True
+Rayleigh Mask 1st & 2nd Order, Slit Width = 10
+
+Export Options:
+OGW = True
+ASCII = True
+ABS = True
+BEM = True
+SEM = True
+PEM = True
+
+Starting (Run/Resume) Position:
+[Blank Start Index] 0
+[Sample Start Index] 0
+################################################################################
+[2021-08-05 14-51-04] STARTING Aqualog SampleQ Execution
+[2021-08-05 14-52-07] Experiment 01 of 07 [Blank 000, Sample 0000] [Files: Group001Blank*] Start Done
+[2021-08-05 14-53-24] Experiment 02 of 07 [Blank 000, Sample 0001] [Files: Group001Sample0001*] Start Done
+[2021-08-05 14-55-06] Experiment 03 of 07 [Blank 000, Sample 0002] [Files: Group001Sample0002*] Start Done
+[2021-08-05 14-56-48] Experiment 04 of 07 [Blank 000, Sample 0003] [Files: Group001Sample0003*] Start Done
+[2021-08-05 15-30-03] Experiment 05 of 07 [Blank 000, Sample 0004] [Files: Group001Sample0004*] Start Done
+[2021-08-05 15-44-37] Experiment 06 of 07 [Blank 000, Sample 0005] [Files: Group001Sample0005*] Start Done
+[2021-08-05 15-54-50] Experiment 07 of 07 [Blank 000, Sample 0006] [Files: Group001Sample0006*] Start
+[2021-08-05 15-56-05] ##### WARNING: CCD SATURATION OCCURRED ##### Done
+[2021-08-05 15-56-14] COMPLETED Aqualog SampleQ Execution
+--------------------------------------------------------------------------------
